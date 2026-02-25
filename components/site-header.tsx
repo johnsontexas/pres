@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, MessageSquare, LogIn, LogOut, User } from "lucide-react"
+import { Menu, X, LogIn, LogOut, User } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 
 const navLinks = [
@@ -39,7 +39,16 @@ export function SiteHeader() {
           {user ? (
             <div className="flex items-center gap-3 border-l border-primary-foreground/20 pl-6">
               <span className="flex items-center gap-1.5 text-xs text-primary-foreground/70">
-                <User className="h-3.5 w-3.5" />
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt=""
+                    className="h-5 w-5 rounded-full"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <User className="h-3.5 w-3.5" />
+                )}
                 {user.name}
                 {user.isAdmin && (
                   <span className="rounded bg-accent/30 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
@@ -48,7 +57,7 @@ export function SiteHeader() {
                 )}
               </span>
               <button
-                onClick={signOut}
+                onClick={() => signOut()}
                 className="flex items-center gap-1.5 rounded-md border border-primary-foreground/20 px-3 py-1.5 text-xs font-medium text-primary-foreground/80 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -96,7 +105,16 @@ export function SiteHeader() {
               {user ? (
                 <div className="flex flex-col gap-3">
                   <span className="flex items-center gap-1.5 text-xs text-primary-foreground/70">
-                    <User className="h-3.5 w-3.5" />
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt=""
+                        className="h-5 w-5 rounded-full"
+                        crossOrigin="anonymous"
+                      />
+                    ) : (
+                      <User className="h-3.5 w-3.5" />
+                    )}
                     {user.name}
                     {user.isAdmin && (
                       <span className="rounded bg-accent/30 px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
