@@ -11,6 +11,16 @@ export function SiteFooter() {
         <p className="mt-4 text-xs text-muted-foreground/60">
           Ad Majorem Dei Gloriam
         </p>
+        <p className="mt-3 text-xs">
+          <a
+            href="https://www.instagram.com/txdanieljohnson"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-foreground/80 underline underline-offset-2 hover:text-foreground"
+          >
+            Follow along on Instagram @txdanieljohnson
+          </a>
+        </p>
       </div>
     </footer>
   )
