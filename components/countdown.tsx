@@ -24,10 +24,10 @@ function getTimeLeft() {
 function TimeBlock({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-2xl font-bold text-primary-foreground tabular-nums md:h-20 md:w-20 md:text-3xl">
+      <span className="flex h-18 w-18 items-center justify-center rounded-xl bg-primary text-3xl font-bold text-primary-foreground tabular-nums shadow-lg md:h-22 md:w-22 md:text-4xl">
         {String(value).padStart(2, "0")}
       </span>
-      <span className="mt-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <span className="mt-3 text-xs font-semibold tracking-widest text-muted-foreground uppercase">
         {label}
       </span>
     </div>
@@ -46,33 +46,37 @@ export function Countdown() {
 
   if (time.expired) {
     return (
-      <section className="bg-background px-6 py-16 text-center">
-        <h2 className="font-serif text-3xl font-bold text-primary md:text-4xl">
-          Election Day Is Here!
-        </h2>
-        <p className="mt-3 text-lg text-muted-foreground">
-          Go vote today. Make your voice heard.
-        </p>
+      <section className="bg-background px-6 py-20 text-center">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="font-serif text-3xl font-bold text-accent md:text-4xl">
+            Election Day Is Here!
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Go vote today. Make your voice heard.
+          </p>
+        </div>
       </section>
     )
   }
 
   return (
-    <section className="bg-background px-6 py-16 text-center">
-      <h2 className="font-serif text-2xl font-bold text-foreground md:text-3xl text-balance">
-        Countdown to Election Day
-      </h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        May 1, 2026
-      </p>
-      <div className="mt-8 flex items-center justify-center gap-3 md:gap-6">
+    <section className="bg-background px-6 py-20 text-center">
+      <div className="mx-auto max-w-2xl">
+        <p className="text-sm font-semibold tracking-widest text-accent uppercase">
+          May 1, 2026
+        </p>
+        <h2 className="mt-3 font-serif text-2xl font-bold text-foreground md:text-3xl text-balance">
+          Countdown to Election Day
+        </h2>
+      </div>
+      <div className="mt-10 flex items-center justify-center gap-4 md:gap-6">
         <TimeBlock value={time.days} label="Days" />
-        <span className="text-2xl font-bold text-muted-foreground">:</span>
+        <span className="text-2xl font-bold text-muted-foreground/40">:</span>
         <TimeBlock value={time.hours} label="Hours" />
-        <span className="text-2xl font-bold text-muted-foreground">:</span>
-        <TimeBlock value={time.minutes} label="Minutes" />
-        <span className="text-2xl font-bold text-muted-foreground">:</span>
-        <TimeBlock value={time.seconds} label="Seconds" />
+        <span className="text-2xl font-bold text-muted-foreground/40">:</span>
+        <TimeBlock value={time.minutes} label="Min" />
+        <span className="text-2xl font-bold text-muted-foreground/40">:</span>
+        <TimeBlock value={time.seconds} label="Sec" />
       </div>
     </section>
   )

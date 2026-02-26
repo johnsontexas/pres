@@ -29,33 +29,37 @@ const planks = [
 
 export function Platform() {
   return (
-    <section id="platform" className="bg-secondary py-20 md:py-28">
+    <section id="platform" className="bg-secondary py-24 md:py-32">
       <div className="mx-auto max-w-6xl px-6 lg:px-8">
         <div className="text-center">
-          <h2 className="font-serif text-3xl font-bold text-foreground md:text-4xl text-balance">
+          <p className="text-sm font-semibold tracking-widest text-accent uppercase">What I stand for</p>
+          <h2 className="mt-3 font-serif text-3xl font-bold text-foreground md:text-4xl text-balance">
             My Platform
           </h2>
-          <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-accent" />
-          <p className="mx-auto mt-6 max-w-2xl text-muted-foreground">
+          <div className="mx-auto mt-4 h-1 w-12 rounded-full bg-accent" />
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
             [A brief sentence about your overall vision for the House Council. What do you want to achieve?]
           </p>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2">
-          {planks.map((plank) => (
+        <div className="mt-16 grid gap-6 sm:grid-cols-2">
+          {planks.map((plank, i) => (
             <div
               key={plank.title}
-              className="group rounded-xl border border-border bg-card p-8 transition-shadow hover:shadow-lg"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-8 transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                <plank.icon className="h-6 w-6" />
+              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-8 translate-x-8 rounded-full bg-accent/5 transition-transform group-hover:translate-x-4 group-hover:-translate-y-4" />
+              <div className="relative">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                  <plank.icon className="h-6 w-6" />
+                </div>
+                <h3 className="mt-6 text-lg font-bold text-card-foreground">
+                  {plank.title}
+                </h3>
+                <p className="mt-3 leading-relaxed text-muted-foreground">
+                  {plank.description}
+                </p>
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-card-foreground">
-                {plank.title}
-              </h3>
-              <p className="mt-2 leading-relaxed text-muted-foreground">
-                {plank.description}
-              </p>
             </div>
           ))}
         </div>
