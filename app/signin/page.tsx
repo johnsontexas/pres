@@ -101,6 +101,11 @@ function SignInForm() {
                 Sign-in failed. Please try again.
               </p>
             )}
+            {error === "rate_limited" && (
+              <p className="text-center text-sm text-destructive">
+                Too many sign-in attempts. Please wait a few seconds and try again.
+              </p>
+            )}
             <p className="text-center text-xs text-muted-foreground">
               Only @mail.strakejesuit.org accounts are accepted
             </p>
