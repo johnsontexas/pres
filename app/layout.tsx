@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Plus_Jakarta_Sans, Instrument_Serif } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/components/auth-context'
 import './globals.css'
 
-const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const _playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
+const _sans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-sans-var" });
+const _serif = Instrument_Serif({ subsets: ["latin"], variable: "--font-serif-var", weight: "400" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://pickdaniel.com'),
   title: 'Vote Daniel Johnson — House Council President',
   description: 'Campaign website for House Council President at Strake Jesuit College Preparatory.',
   icons: {
@@ -40,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${_inter.variable} ${_playfair.variable} font-sans antialiased`}>
+      <body className={`${_sans.variable} ${_serif.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>
