@@ -14,31 +14,35 @@ export default function QuestionsPage() {
   const { user } = useAuth()
   const [questions, setQuestions] = useState<Question[]>([])
   const [sort, setSort] = useState<SortMode>("top")
+  const [isLoading, setIsLoading] = useState(true)
 
-  const refreshQuestions = useCallback(() => {
-    const all = getQuestions()
+  const refreshQuestions = useCallback(async () => {
+    setIsLoading(true)
+    const all = await getQuestions()
+    const sorted = [...all]
     if (sort === "top") {
-      all.sort((a, b) => b.upvotes.length - a.upvotes.length)
+      sorted.sort((a, b) => b.upvotes.length - a.upvotes.length)
     } else {
-      all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
-    setQuestions(all)
+    setQuestions(sorted)
+    setIsLoading(false)
   }, [sort])
 
   useEffect(() => {
-    refreshQuestions()
+    void refreshQuestions()
   }, [refreshQuestions])
 
-  const handleUpvote = (id: string) => {
+  const handleUpvote = async (id: string) => {
     if (!user) return
-    toggleUpvote(id, user.id)
-    refreshQuestions()
+    await toggleUpvote(id, user.id)
+    void refreshQuestions()
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!user?.isAdmin) return
-    deleteQuestion(id)
-    refreshQuestions()
+    await deleteQuestion(id)
+    void refreshQuestions()
   }
 
   const unanswered = questions.filter((q) => !q.answer).length
@@ -116,7 +120,11 @@ export default function QuestionsPage() {
         </div>
 
         {/* Questions list */}
-        {questions.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : questions.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border bg-card px-6 py-16 text-center">
             <MessageSquarePlus className="mx-auto h-10 w-10 text-muted-foreground/50" />
             <h3 className="mt-4 text-lg font-semibold text-foreground">No questions yet</h3>

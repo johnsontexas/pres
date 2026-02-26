@@ -1,3 +1,5 @@
+import { createClient } from "@/lib/supabase/client"
+
 export type Question = {
   id: string
   author: string
@@ -8,67 +10,121 @@ export type Question = {
   answer: string | null
 }
 
-const STORAGE_KEY = "campaign-questions"
+function mapFromDb(row: {
+  id: string
+  author: string
+  author_id: string
+  text: string
+  created_at: string
+  upvotes: string[] | null
+  answer: string | null
+}): Question {
+  return {
+    id: row.id,
+    author: row.author,
+    authorId: row.author_id,
+    text: row.text,
+    createdAt: row.created_at,
+    upvotes: row.upvotes ?? [],
+    answer: row.answer,
+  }
+}
 
-export function getQuestions(): Question[] {
-  if (typeof window === "undefined") return []
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
+export async function getQuestions(): Promise<Question[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error || !data) {
+    console.error("Error fetching questions", error)
     return []
   }
+
+  return data.map(mapFromDb)
 }
 
-export function saveQuestions(questions: Question[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(questions))
-}
+export async function addQuestion(text: string, author: string, authorId: string): Promise<Question | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("questions")
+    .insert({
+      author,
+      author_id: authorId,
+      text,
+    })
+    .select("*")
+    .single()
 
-export function addQuestion(text: string, author: string, authorId: string): Question {
-  const questions = getQuestions()
-  const newQuestion: Question = {
-    id: crypto.randomUUID(),
-    author,
-    authorId,
-    text,
-    createdAt: new Date().toISOString(),
-    upvotes: [],
-    answer: null,
-  }
-  questions.unshift(newQuestion)
-  saveQuestions(questions)
-  return newQuestion
-}
-
-export function deleteQuestion(id: string) {
-  const questions = getQuestions().filter((q) => q.id !== id)
-  saveQuestions(questions)
-}
-
-export function toggleUpvote(questionId: string, userId: string) {
-  const questions = getQuestions()
-  const question = questions.find((q) => q.id === questionId)
-  if (!question) return
-
-  const idx = question.upvotes.indexOf(userId)
-  if (idx === -1) {
-    question.upvotes.push(userId)
-  } else {
-    question.upvotes.splice(idx, 1)
+  if (error || !data) {
+    console.error("Error adding question", error)
+    return null
   }
 
-  saveQuestions(questions)
+  return mapFromDb(data)
 }
 
-export function answerQuestion(questionId: string, answer: string) {
-  const questions = getQuestions()
-  const question = questions.find((q) => q.id === questionId)
-  if (!question) return
-
-  question.answer = answer
-  saveQuestions(questions)
+export async function deleteQuestion(id: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.from("questions").delete().eq("id", id)
+  if (error) {
+    console.error("Error deleting question", error)
+  }
 }
 
-export function getQuestion(id: string): Question | undefined {
-  return getQuestions().find((q) => q.id === id)
+export async function toggleUpvote(questionId: string, userId: string): Promise<void> {
+  const supabase = createClient()
+
+  const { data: row, error } = await supabase
+    .from("questions")
+    .select("id, upvotes")
+    .eq("id", questionId)
+    .single()
+
+  if (error || !row) {
+    console.error("Error loading question for upvote", error)
+    return
+  }
+
+  const current = (row.upvotes as string[] | null) ?? []
+  const hasUpvoted = current.includes(userId)
+  const next = hasUpvoted ? current.filter((id) => id !== userId) : [...current, userId]
+
+  const { error: updateError } = await supabase
+    .from("questions")
+    .update({ upvotes: next })
+    .eq("id", questionId)
+
+  if (updateError) {
+    console.error("Error updating upvotes", updateError)
+  }
+}
+
+export async function answerQuestion(questionId: string, answer: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from("questions")
+    .update({ answer })
+    .eq("id", questionId)
+
+  if (error) {
+    console.error("Error saving answer", error)
+  }
+}
+
+export async function getQuestion(id: string): Promise<Question | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (error || !data) {
+    console.error("Error fetching question", error)
+    return null
+  }
+
+  return mapFromDb(data)
 }

@@ -26,7 +26,7 @@ export default function AskPage() {
     return null
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = text.trim()
     if (!trimmed) {
@@ -38,7 +38,7 @@ export default function AskPage() {
       return
     }
 
-    addQuestion(trimmed, user.name, user.id)
+    await addQuestion(trimmed, user.name, user.id)
     router.push("/questions")
   }
 

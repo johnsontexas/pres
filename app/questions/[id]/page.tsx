@@ -24,15 +24,25 @@ export default function QuestionDetailPage({
   const [question, setQuestion] = useState<Question | null>(null)
   const [answerText, setAnswerText] = useState("")
   const [editing, setEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const q = getQuestion(id)
-    if (!q) return
-    setQuestion(q)
-    if (q.answer) setAnswerText(q.answer)
+    const load = async () => {
+      setIsLoading(true)
+      const q = await getQuestion(id)
+      if (!q) {
+        setQuestion(null)
+        setIsLoading(false)
+        return
+      }
+      setQuestion(q)
+      if (q.answer) setAnswerText(q.answer)
+      setIsLoading(false)
+    }
+    void load()
   }, [id])
 
-  if (!question) {
+  if (!question && !isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
         <h2 className="text-xl font-semibold text-foreground">Question not found</h2>
@@ -51,22 +61,24 @@ export default function QuestionDetailPage({
 
   const hasUpvoted = user ? question.upvotes.includes(user.id) : false
 
-  const handleUpvote = () => {
+  const handleUpvote = async () => {
     if (!user) return
-    toggleUpvote(question.id, user.id)
-    setQuestion(getQuestion(question.id) ?? null)
+    await toggleUpvote(question.id, user.id)
+    const updated = await getQuestion(question.id)
+    setQuestion(updated)
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!user?.isAdmin) return
-    deleteQuestion(question.id)
+    await deleteQuestion(question.id)
     router.push("/questions")
   }
 
-  const handleAnswer = () => {
+  const handleAnswer = async () => {
     if (!user?.isAdmin || !answerText.trim()) return
-    answerQuestion(question.id, answerText.trim())
-    setQuestion(getQuestion(question.id) ?? null)
+    await answerQuestion(question.id, answerText.trim())
+    const updated = await getQuestion(question.id)
+    setQuestion(updated)
     setEditing(false)
   }
 
@@ -96,6 +108,11 @@ export default function QuestionDetailPage({
       </div>
 
       <div className="mx-auto max-w-3xl px-6 py-8">
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : (
         {/* Question */}
         <div className="flex gap-4">
           <div className="flex flex-col items-center gap-1">
@@ -193,6 +210,7 @@ export default function QuestionDetailPage({
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   )
