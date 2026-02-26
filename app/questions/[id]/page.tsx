@@ -59,7 +59,7 @@ export default function QuestionDetailPage({
     )
   }
 
-  const hasUpvoted = user ? question.upvotes.includes(user.id) : false
+  const hasUpvoted = user && question ? question.upvotes.includes(user.id) : false
 
   const handleUpvote = async () => {
     if (!user) return
@@ -82,7 +82,7 @@ export default function QuestionDetailPage({
     setEditing(false)
   }
 
-  const createdDate = new Date(question.createdAt)
+  const createdDate = question ? new Date(question.createdAt) : null
 
   return (
     <div className="min-h-screen bg-background">
