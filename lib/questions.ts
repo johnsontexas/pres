@@ -8,6 +8,7 @@ export type Question = {
   createdAt: string
   upvotes: string[] // user IDs
   answer: string | null
+  isAnonymous: boolean
 }
 
 function mapFromDb(row: {
@@ -18,6 +19,7 @@ function mapFromDb(row: {
   created_at: string
   upvotes: string[] | null
   answer: string | null
+  is_anonymous?: boolean | null
 }): Question {
   return {
     id: row.id,
@@ -27,6 +29,7 @@ function mapFromDb(row: {
     createdAt: row.created_at,
     upvotes: row.upvotes ?? [],
     answer: row.answer,
+    isAnonymous: row.is_anonymous ?? false,
   }
 }
 
@@ -45,7 +48,12 @@ export async function getQuestions(): Promise<Question[]> {
   return data.map(mapFromDb)
 }
 
-export async function addQuestion(text: string, author: string, authorId: string): Promise<Question | null> {
+export async function addQuestion(
+  text: string,
+  author: string,
+  authorId: string,
+  isAnonymous: boolean
+): Promise<Question | null> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("questions")
@@ -53,6 +61,7 @@ export async function addQuestion(text: string, author: string, authorId: string
       author,
       author_id: authorId,
       text,
+      is_anonymous: isAnonymous,
     })
     .select("*")
     .single()

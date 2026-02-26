@@ -80,6 +80,8 @@ export default function QuestionDetailPage() {
   }
 
   const createdDate = question ? new Date(question.createdAt) : null
+  const displayAuthor =
+    question && question.isAnonymous && !user?.isAdmin ? "Anonymous" : question?.author
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,7 +140,9 @@ export default function QuestionDetailPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   <span>
                     Asked by{" "}
-                    <span className="font-medium text-foreground">{question.author}</span>
+                    <span className="font-medium text-foreground">
+                      {displayAuthor}
+                    </span>
                   </span>
                   <span>
                     {createdDate.toLocaleDateString("en-US", {
