@@ -40,8 +40,20 @@ export default function AskPage() {
       return
     }
 
-    // Simple rate limit: max 5 questions per user per hour
     const supabase = createClient()
+    // Block banned users from asking
+    const { data: bannedRow } = await supabase
+      .from("banned_askers")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (bannedRow) {
+      setError("You are not allowed to ask new questions at this time.")
+      return
+    }
+
+    // Simple rate limit: max 5 questions per user per hour
     const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString()
     const { count, error: countError } = await supabase
       .from("questions")

@@ -3,14 +3,10 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
-import { ArrowLeft, ChevronUp, Trash2, CheckCircle2, Send } from "lucide-react"
+import { ArrowLeft, ChevronUp, Trash2, CheckCircle2, Send, UserX } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
-import {
-  getQuestion,
-  toggleUpvote,
-  answerQuestion,
-  deleteQuestion,
-} from "@/lib/questions"
+import { getQuestion, toggleUpvote, answerQuestion, deleteQuestion } from "@/lib/questions"
+import { createClient } from "@/lib/supabase/client"
 import type { Question } from "@/lib/questions"
 
 export default function QuestionDetailPage() {
@@ -22,6 +18,7 @@ export default function QuestionDetailPage() {
   const [answerText, setAnswerText] = useState("")
   const [editing, setEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isBanned, setIsBanned] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -34,10 +31,19 @@ export default function QuestionDetailPage() {
       }
       setQuestion(q)
       if (q.answer) setAnswerText(q.answer)
+      if (user?.isAdmin) {
+        const supabase = createClient()
+        const { data: bannedRow } = await supabase
+          .from("banned_askers")
+          .select("user_id")
+          .eq("user_id", q.authorId)
+          .maybeSingle()
+        setIsBanned(Boolean(bannedRow))
+      }
       setIsLoading(false)
     }
     void load()
-  }, [id])
+  }, [id, user?.isAdmin])
 
   if (!question && !isLoading) {
     return (
@@ -71,6 +77,20 @@ export default function QuestionDetailPage() {
     router.push("/questions")
   }
 
+  const handleToggleBan = async () => {
+    if (!user?.isAdmin || !question) return
+    const supabase = createClient()
+    if (isBanned) {
+      await supabase.from("banned_askers").delete().eq("user_id", question.authorId)
+      setIsBanned(false)
+    } else {
+      await supabase
+        .from("banned_askers")
+        .upsert({ user_id: question.authorId })
+      setIsBanned(true)
+    }
+  }
+
   const handleAnswer = async () => {
     if (!user?.isAdmin || !answerText.trim()) return
     await answerQuestion(question.id, answerText.trim())
@@ -94,14 +114,27 @@ export default function QuestionDetailPage() {
             <ArrowLeft className="h-4 w-4" />
             All Questions
           </Link>
-          {user?.isAdmin && (
-            <button
-              onClick={handleDelete}
-              className="flex items-center gap-2 rounded-lg border border-destructive/20 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </button>
+          {user?.isAdmin && question && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleToggleBan}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  isBanned
+                    ? "border-green-600/30 text-green-700 hover:bg-green-600/10"
+                    : "border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+                }`}
+              >
+                <UserX className="h-4 w-4" />
+                {isBanned ? "Unban from asking" : "Ban from asking"}
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-2 rounded-lg border border-destructive/20 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </button>
+            </div>
           )}
         </div>
       </div>
