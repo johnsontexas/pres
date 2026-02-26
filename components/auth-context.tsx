@@ -1,10 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { createContext, useContext } from "react"
 import type { ReactNode } from "react"
-
-const ADMIN_PASSWORD = "strakeadmin2026"
-const USER_KEY = "campaign-user"
+import { useSession, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react"
 
 export type User = {
   id: string
@@ -14,14 +12,14 @@ export type User = {
 
 type AuthContextType = {
   user: User | null
-  signIn: (name: string, adminPassword?: string) => boolean
+  signInWithGoogle: (callbackUrl?: string) => void
   signOut: () => void
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  signIn: () => false,
+  signInWithGoogle: () => { /* noop */ },
   signOut: () => {},
   isLoading: true,
 })
@@ -30,46 +28,30 @@ export function useAuth() {
   return useContext(AuthContext)
 }
 
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "").split(",").map((e) => e.trim()).filter(Boolean)
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: session, status } = useSession()
+  const isLoading = status === "loading"
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(USER_KEY)
-      if (stored) {
-        setUser(JSON.parse(stored))
+  const user: User | null = session?.user
+    ? {
+        id: session.user.id ?? session.user.email ?? "",
+        name: session.user.name ?? session.user.email ?? "User",
+        isAdmin: session.user.email ? ADMIN_EMAILS.includes(session.user.email) : false,
       }
-    } catch {
-      // ignore parse errors
-    }
-    setIsLoading(false)
-  }, [])
+    : null
 
-  const signIn = useCallback((name: string, adminPassword?: string) => {
-    const isAdmin = adminPassword === ADMIN_PASSWORD
-    if (adminPassword && !isAdmin) {
-      return false // wrong admin password
-    }
+  const signInWithGoogle = (callbackUrl = "/questions") => {
+    nextAuthSignIn("google", { callbackUrl })
+  }
 
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      isAdmin,
-    }
-
-    localStorage.setItem(USER_KEY, JSON.stringify(newUser))
-    setUser(newUser)
-    return true
-  }, [])
-
-  const signOut = useCallback(() => {
-    localStorage.removeItem(USER_KEY)
-    setUser(null)
-  }, [])
+  const signOut = () => {
+    nextAuthSignOut({ callbackUrl: "/" })
+  }
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, isLoading }}>
+    <AuthContext.Provider value={{ user, signInWithGoogle, signOut, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

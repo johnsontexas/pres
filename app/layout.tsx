@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/components/auth-context'
+import { SessionProvider } from '@/components/session-provider'
 import './globals.css'
 
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -41,9 +42,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${_inter.variable} ${_playfair.variable} font-sans antialiased`}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </SessionProvider>
         <Analytics />
       </body>
     </html>
