@@ -11,6 +11,7 @@ function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("callbackUrl") ?? searchParams.get("redirect") ?? "/questions"
+  const error = searchParams.get("error")
 
   // Already signed in
   if (user) {
@@ -67,7 +68,7 @@ function SignInForm() {
           <div className="mt-6 flex flex-col gap-4">
             <button
               type="button"
-              onClick={() => signInWithGoogle(redirect)}
+              onClick={() => signInWithGoogle(typeof redirect === "string" ? redirect : undefined)}
               className="flex w-full items-center justify-center gap-3 rounded-lg border border-input bg-background px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -90,6 +91,16 @@ function SignInForm() {
               </svg>
               Sign in with Google
             </button>
+            {error === "invalid_domain" && (
+              <p className="text-center text-sm text-destructive">
+                Only @mail.strakejesuit.org accounts are accepted.
+              </p>
+            )}
+            {error === "auth_failed" && (
+              <p className="text-center text-sm text-destructive">
+                Sign-in failed. Please try again.
+              </p>
+            )}
             <p className="text-center text-xs text-muted-foreground">
               Only @mail.strakejesuit.org accounts are accepted
             </p>

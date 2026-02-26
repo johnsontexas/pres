@@ -1,12 +1,21 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Plus_Jakarta_Sans, Instrument_Serif } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/components/auth-context'
-import { SessionProvider } from '@/components/session-provider'
 import './globals.css'
 
-const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const _playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  variable: "--font-instrument",
+  weight: "400",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: 'Vote Daniel Johnson — House Council President',
@@ -41,12 +50,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${_inter.variable} ${_playfair.variable} font-sans antialiased`}>
-        <SessionProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </SessionProvider>
+      <body className={`${plusJakarta.variable} ${instrumentSerif.variable} font-sans antialiased`}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
