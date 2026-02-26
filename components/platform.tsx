@@ -3,27 +3,27 @@ import { Megaphone, Users, Calendar, Star } from "lucide-react"
 const planks = [
   {
     icon: Megaphone,
-    title: "[Platform Point 1]",
+    title: "Make Game Days More Fun",
     description:
-      "[Describe your first campaign promise or initiative. Be specific about what you will do and how it will benefit students.]",
+      "I want to make Game Days more fun and enjoyable for everyone, with better energy, activities, and traditions that bring the whole school together.",
   },
   {
     icon: Users,
-    title: "[Platform Point 2]",
+    title: "Be a Voice for Students",
     description:
-      "[Describe your second campaign promise. Focus on community, inclusivity, or school spirit.]",
+      "I will be a voice for the students and always be open to ideas and advice, listening to what you want and bringing your feedback to House Council.",
   },
   {
     icon: Calendar,
-    title: "[Platform Point 3]",
+    title: "More Activities and Competitions",
     description:
-      "[Describe your third campaign promise. Think about events, activities, or improvements you want to bring.]",
+      "I want to add more activities and competitions throughout the year, like using intramural club competitions for house points, so there are more chances to get involved and have fun.",
   },
   {
     icon: Star,
-    title: "[Platform Point 4]",
+    title: "Keeping God #1",
     description:
-      "[Describe your fourth campaign promise. What sets you apart from other candidates?]",
+      "Most importantly, I want to help make sure God remains #1 in everything we do by supporting the traditions, retreats, and faith life that make our school special.",
   },
 ]
 
@@ -37,7 +37,7 @@ export function Platform() {
           </h2>
           <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-accent" />
           <p className="mx-auto mt-6 max-w-2xl text-muted-foreground">
-            [A brief sentence about your overall vision for the House Council. What do you want to achieve?]
+            My goal is to make school more fun, more connected, and more faith-filled by bringing energy to Game Days, listening to students, adding competitions and activities, and always keeping God at the center.
           </p>
         </div>
 

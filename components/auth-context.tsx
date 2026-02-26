@@ -31,15 +31,19 @@ export function useAuth() {
 
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
   .split(",")
-  .map((e) => e.trim())
+  .map((e) => e.trim().toLowerCase())
   .filter(Boolean)
 
 function mapSupabaseUser(sbUser: SupabaseUser | null): User | null {
   if (!sbUser) return null
-  const email = sbUser.email ?? ""
+  const email = (sbUser.email ?? "").toLowerCase()
   return {
     id: sbUser.id,
-    name: sbUser.user_metadata?.full_name ?? sbUser.user_metadata?.name ?? email.split("@")[0] ?? "User",
+    name:
+      sbUser.user_metadata?.full_name ??
+      sbUser.user_metadata?.name ??
+      email.split("@")[0] ??
+      "User",
     isAdmin: ADMIN_EMAILS.includes(email),
   }
 }
