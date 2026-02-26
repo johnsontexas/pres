@@ -113,103 +113,114 @@ export default function QuestionDetailPage({
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : (
-        {/* Question */}
-        <div className="flex gap-4">
-          <div className="flex flex-col items-center gap-1">
-            <button
-              onClick={handleUpvote}
-              disabled={!user}
-              className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
-                hasUpvoted
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-primary/10"
-              } ${!user ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-              aria-label="Upvote"
-            >
-              <ChevronUp className="h-5 w-5" />
-            </button>
-            <span className="text-base font-bold tabular-nums text-foreground">
-              {question.upvotes.length}
-            </span>
-          </div>
-
-          <div className="flex-1">
-            <h1 className="font-serif text-2xl font-bold leading-snug text-foreground md:text-3xl">
-              {question.text}
-            </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span>Asked by <span className="font-medium text-foreground">{question.author}</span></span>
-              <span>{createdDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Answer section */}
-        <div className="mt-8 border-t border-border pt-8">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-            {question.answer ? (
-              <>
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                Candidate{"'"}s Answer
-              </>
-            ) : (
-              "Awaiting Answer"
-            )}
-          </h2>
-
-          {question.answer && !editing ? (
-            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-5 py-4">
-              <p className="leading-relaxed text-foreground whitespace-pre-wrap">
-                {question.answer}
-              </p>
-              {user?.isAdmin && (
+          <>
+            {/* Question */}
+            <div className="flex gap-4">
+              <div className="flex flex-col items-center gap-1">
                 <button
-                  onClick={() => setEditing(true)}
-                  className="mt-4 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                  onClick={handleUpvote}
+                  disabled={!user}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
+                    hasUpvoted
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground hover:bg-primary/10"
+                  } ${!user ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                  aria-label="Upvote"
                 >
-                  Edit Answer
+                  <ChevronUp className="h-5 w-5" />
                 </button>
-              )}
-            </div>
-          ) : !question.answer && !user?.isAdmin ? (
-            <p className="mt-4 text-muted-foreground">
-              This question hasn{"'"}t been answered yet. Check back soon!
-            </p>
-          ) : null}
+                <span className="text-base font-bold tabular-nums text-foreground">
+                  {question.upvotes.length}
+                </span>
+              </div>
 
-          {/* Admin answer form */}
-          {user?.isAdmin && (!question.answer || editing) && (
-            <div className="mt-4">
-              <textarea
-                value={answerText}
-                onChange={(e) => setAnswerText(e.target.value)}
-                placeholder="Type your answer here..."
-                rows={4}
-                className="w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
-              />
-              <div className="mt-3 flex gap-3">
-                <button
-                  onClick={handleAnswer}
-                  className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-                >
-                  <Send className="h-4 w-4" />
-                  {question.answer ? "Update Answer" : "Post Answer"}
-                </button>
-                {editing && (
-                  <button
-                    onClick={() => {
-                      setEditing(false)
-                      setAnswerText(question.answer ?? "")
-                    }}
-                    className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    Cancel
-                  </button>
-                )}
+              <div className="flex-1">
+                <h1 className="font-serif text-2xl font-bold leading-snug text-foreground md:text-3xl">
+                  {question.text}
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                  <span>
+                    Asked by{" "}
+                    <span className="font-medium text-foreground">{question.author}</span>
+                  </span>
+                  <span>
+                    {createdDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Answer section */}
+            <div className="mt-8 border-t border-border pt-8">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                {question.answer ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    Candidate{"'"}s Answer
+                  </>
+                ) : (
+                  "Awaiting Answer"
+                )}
+              </h2>
+
+              {question.answer && !editing ? (
+                <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-5 py-4">
+                  <p className="leading-relaxed text-foreground whitespace-pre-wrap">
+                    {question.answer}
+                  </p>
+                  {user?.isAdmin && (
+                    <button
+                      onClick={() => setEditing(true)}
+                      className="mt-4 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    >
+                      Edit Answer
+                    </button>
+                  )}
+                </div>
+              ) : !question.answer && !user?.isAdmin ? (
+                <p className="mt-4 text-muted-foreground">
+                  This question hasn{"'"}t been answered yet. Check back soon!
+                </p>
+              ) : null}
+
+              {/* Admin answer form */}
+              {user?.isAdmin && (!question.answer || editing) && (
+                <div className="mt-4">
+                  <textarea
+                    value={answerText}
+                    onChange={(e) => setAnswerText(e.target.value)}
+                    placeholder="Type your answer here..."
+                    rows={4}
+                    className="w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
+                  />
+                  <div className="mt-3 flex gap-3">
+                    <button
+                      onClick={handleAnswer}
+                      className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                    >
+                      <Send className="h-4 w-4" />
+                      {question.answer ? "Update Answer" : "Post Answer"}
+                    </button>
+                    {editing && (
+                      <button
+                        onClick={() => {
+                          setEditing(false)
+                          setAnswerText(question.answer ?? "")
+                        }}
+                        className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
