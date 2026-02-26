@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, ChevronUp, Trash2, CheckCircle2, Send } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import {
@@ -13,12 +13,9 @@ import {
 } from "@/lib/questions"
 import type { Question } from "@/lib/questions"
 
-export default function QuestionDetailPage({
-  params,
-}: {
-  params: { id: string }
-}) {
-  const { id } = params
+export default function QuestionDetailPage() {
+  const params = useParams<{ id: string }>()
+  const id = params.id
   const { user } = useAuth()
   const router = useRouter()
   const [question, setQuestion] = useState<Question | null>(null)
