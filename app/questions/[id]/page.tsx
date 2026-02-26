@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, ChevronUp, Trash2, CheckCircle2, Send } from "lucide-react"
@@ -16,9 +16,9 @@ import type { Question } from "@/lib/questions"
 export default function QuestionDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = use(params)
+  const { id } = params
   const { user } = useAuth()
   const router = useRouter()
   const [question, setQuestion] = useState<Question | null>(null)
