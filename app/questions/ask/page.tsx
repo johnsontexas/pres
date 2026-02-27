@@ -28,6 +28,8 @@ export default function AskPage() {
     return null
   }
 
+  const CHARACTER_LIMIT = 500
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = text.trim()
@@ -37,6 +39,10 @@ export default function AskPage() {
     }
     if (trimmed.length < 10) {
       setError("Your question is too short. Please be more specific.")
+      return
+    }
+    if (trimmed.length > CHARACTER_LIMIT) {
+      setError(`Your question is too long. Maximum ${CHARACTER_LIMIT} characters.`)
       return
     }
 
@@ -100,14 +106,24 @@ export default function AskPage() {
             id="question-text"
             value={text}
             onChange={(e) => {
-              setText(e.target.value)
-              setError("")
+              if (e.target.value.length <= CHARACTER_LIMIT) {
+                setText(e.target.value)
+                setError("")
+              }
             }}
+            maxLength={CHARACTER_LIMIT}
             placeholder="What would you like to ask about my platform, ideas, or plans?"
             rows={5}
             className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
           />
-          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+          <div className="mt-1.5 flex items-center justify-between">
+            <div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+            <p className={`text-xs tabular-nums ${text.length >= CHARACTER_LIMIT ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+              {text.length}/{CHARACTER_LIMIT}
+            </p>
+          </div>
 
           <div className="mt-4 flex items-start gap-2">
             <input
