@@ -29,33 +29,37 @@ const planks = [
 
 export function Platform() {
   return (
-    <section id="platform" className="bg-secondary py-20 md:py-28">
-      <div className="mx-auto max-w-6xl px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="font-serif text-3xl font-bold text-foreground md:text-4xl text-balance">
+    <section id="platform" className="bg-background py-20 md:py-28">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="fade-in text-center">
+          <h2 className="font-serif text-5xl font-bold text-foreground md:text-6xl">
             My Platform
           </h2>
-          <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-accent" />
-          <p className="mx-auto mt-6 max-w-2xl text-muted-foreground">
+          <div className="mx-auto mt-4 h-1.5 w-20 rounded-full bg-gradient-to-r from-primary to-accent" />
+          <p className="mx-auto mt-8 max-w-3xl text-xl leading-relaxed text-muted-foreground">
             My goal is to make school more fun, more connected, and more faith-filled by bringing energy to Game Days, listening to students, adding competitions and activities, and always keeping God at the center.
           </p>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2">
-          {planks.map((plank) => (
+        <div className="mt-20 grid gap-8 sm:grid-cols-2 lg:gap-10">
+          {planks.map((plank, index) => (
             <div
               key={plank.title}
-              className="group rounded-xl border border-border bg-card p-8 transition-shadow hover:shadow-lg"
+              className="group fade-in relative overflow-hidden rounded-3xl border border-border bg-card p-10 transition-all hover:shadow-2xl hover:shadow-primary/10"
+              style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                <plank.icon className="h-6 w-6" />
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 blur-2xl" />
+              <div className="relative">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 text-primary transition-all group-hover:scale-110 group-hover:from-primary group-hover:to-accent group-hover:text-primary-foreground">
+                  <plank.icon className="h-8 w-8" />
+                </div>
+                <h3 className="mt-6 text-2xl font-bold text-foreground">
+                  {plank.title}
+                </h3>
+                <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                  {plank.description}
+                </p>
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-card-foreground">
-                {plank.title}
-              </h3>
-              <p className="mt-2 leading-relaxed text-muted-foreground">
-                {plank.description}
-              </p>
             </div>
           ))}
         </div>
