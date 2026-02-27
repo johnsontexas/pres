@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart } from "lucide-react"
+import { Heart, HandHeart } from "lucide-react"
+
+const CAMPAIGN_FORM_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSe6uhueV-xclcAqBUoOqE5WVggvSNK3NEi2qUHVlvrZev7KBQ/viewform"
 
 export function Hero() {
-  const [formUrl] = useState("")
-
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-background to-secondary/30 pt-24 pb-32 md:pt-32 md:pb-40">
       <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -45,31 +45,31 @@ export function Hero() {
               >
                 Ask a Question
               </Link>
-              {formUrl ? (
-                <a
-                  href={formUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border-2 border-accent/50 bg-accent/10 px-8 py-4 text-base font-semibold text-accent transition-all hover:border-accent hover:bg-accent/20"
-                >
-                  <Heart className="h-5 w-5" />
-                  Support My Campaign
-                </a>
-              ) : null}
+              <a
+                href={CAMPAIGN_FORM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-accent/50 bg-accent/10 px-8 py-4 text-base font-semibold text-accent transition-all hover:border-accent hover:bg-accent/20 hover:scale-105"
+              >
+                <HandHeart className="h-5 w-5" />
+                Help My Campaign
+              </a>
             </div>
           </div>
 
           <div className="fade-in relative lg:pl-8">
             <div className="relative">
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-primary/20 to-accent/20 blur-2xl" />
-              <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-card shadow-2xl">
+              <div className="absolute -inset-6 rounded-full bg-gradient-to-tr from-primary/30 via-accent/20 to-primary/10 blur-3xl" />
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-primary/40 to-accent/40 opacity-75 blur-sm" />
+              <div className="relative overflow-hidden rounded-3xl">
                 <Image
                   src="/images/candidate.jpg"
                   alt="Daniel Johnson"
                   width={600}
                   height={700}
-                  className="h-auto w-full object-cover"
+                  className="h-auto w-full object-cover mix-blend-normal"
                   priority
+                  style={{ background: "transparent" }}
                 />
               </div>
             </div>
