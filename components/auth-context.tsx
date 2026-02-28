@@ -1,10 +1,9 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react"
 import type { ReactNode } from "react"
-
-const ADMIN_PASSWORD = "strakeadmin2026"
-const USER_KEY = "campaign-user"
+import { createClient } from "@/lib/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 export type User = {
   id: string
@@ -14,15 +13,15 @@ export type User = {
 
 type AuthContextType = {
   user: User | null
-  signIn: (name: string, adminPassword?: string) => boolean
-  signOut: () => void
+  signInWithGoogle: (callbackUrl?: string) => Promise<void>
+  signOut: () => Promise<void>
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  signIn: () => false,
-  signOut: () => {},
+  signInWithGoogle: async () => {},
+  signOut: async () => {},
   isLoading: true,
 })
 
@@ -30,46 +29,75 @@ export function useAuth() {
   return useContext(AuthContext)
 }
 
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean)
+
+function mapSupabaseUser(sbUser: SupabaseUser | null): User | null {
+  if (!sbUser) return null
+  const email = (sbUser.email ?? "").toLowerCase()
+  return {
+    id: sbUser.id,
+    name:
+      sbUser.user_metadata?.full_name ??
+      sbUser.user_metadata?.name ??
+      email.split("@")[0] ??
+      "User",
+    isAdmin: ADMIN_EMAILS.includes(email),
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(USER_KEY)
-      if (stored) {
-        setUser(JSON.parse(stored))
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(mapSupabaseUser(session?.user ?? null))
+      setIsLoading(false)
+    })
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(mapSupabaseUser(session?.user ?? null))
+      setIsLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
+
+  const syncedAdmin = useRef(false)
+  useEffect(() => {
+    if (!user?.isAdmin || syncedAdmin.current) return
+    syncedAdmin.current = true
+    fetch("/api/sync-admin", { method: "POST" }).catch(() => {})
+  }, [user?.isAdmin])
+
+  const signInWithGoogle = useCallback(
+    async (callbackUrl = "/questions") => {
+      const { data } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(callbackUrl)}`,
+        },
+      })
+      if (data.url) {
+        window.location.href = data.url
       }
-    } catch {
-      // ignore parse errors
-    }
-    setIsLoading(false)
-  }, [])
+    },
+    [supabase]
+  )
 
-  const signIn = useCallback((name: string, adminPassword?: string) => {
-    const isAdmin = adminPassword === ADMIN_PASSWORD
-    if (adminPassword && !isAdmin) {
-      return false // wrong admin password
-    }
-
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      isAdmin,
-    }
-
-    localStorage.setItem(USER_KEY, JSON.stringify(newUser))
-    setUser(newUser)
-    return true
-  }, [])
-
-  const signOut = useCallback(() => {
-    localStorage.removeItem(USER_KEY)
-    setUser(null)
-  }, [])
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut()
+    window.location.href = "/"
+  }, [supabase])
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, isLoading }}>
+    <AuthContext.Provider value={{ user, signInWithGoogle, signOut, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

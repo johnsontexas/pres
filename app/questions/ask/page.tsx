@@ -6,12 +6,14 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { addQuestion } from "@/lib/questions"
+import { createClient } from "@/lib/supabase/client"
 
 export default function AskPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [text, setText] = useState("")
   const [error, setError] = useState("")
+  const [isAnonymous, setIsAnonymous] = useState(false)
 
   if (isLoading) {
     return (
@@ -26,7 +28,7 @@ export default function AskPage() {
     return null
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = text.trim()
     if (!trimmed) {
@@ -38,7 +40,35 @@ export default function AskPage() {
       return
     }
 
-    addQuestion(trimmed, user.name, user.id)
+    const supabase = createClient()
+    // Block banned users from asking (admins can always ask)
+    if (!user.isAdmin) {
+      const { data: bannedRow } = await supabase
+        .from("banned_askers")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (bannedRow) {
+        setError("You are not allowed to ask new questions at this time.")
+        return
+      }
+    }
+
+    // Simple rate limit: max 5 questions per user per hour
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { count, error: countError } = await supabase
+      .from("questions")
+      .select("id", { count: "exact", head: true })
+      .eq("author_id", user.id)
+      .gte("created_at", cutoff)
+
+    if (!countError && (count ?? 0) >= 5) {
+      setError("You can ask up to 5 questions per hour. Please wait a bit before asking another.")
+      return
+    }
+
+    await addQuestion(trimmed, user.name, user.id, isAnonymous)
     router.push("/questions")
   }
 
@@ -80,6 +110,23 @@ export default function AskPage() {
             className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
           />
           {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+
+          <div className="mt-4 flex items-start gap-2">
+            <input
+              id="ask-anonymously"
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary"
+            />
+            <label htmlFor="ask-anonymously" className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Ask anonymously</span>
+              <br />
+              <span className="text-xs text-muted-foreground">
+                Your name and email are still visible to admins.
+              </span>
+            </label>
+          </div>
 
           <div className="mt-6 flex gap-3">
             <button

@@ -1,0 +1,8 @@
+ # Allow Supabase auth callback paths to be handled directly
+ /auth/:splat 200
+
+ # Allow Netlify functions to be called directly
+ /.netlify/functions/* /.netlify/functions/:splat 200
+
+ # SPA-style fallback for everything else (keep at the bottom)
+ /* /index.html 200

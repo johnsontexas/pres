@@ -16,6 +16,8 @@ export function QuestionCard({
 }) {
   const { user } = useAuth()
   const hasUpvoted = user ? question.upvotes.includes(user.id) : false
+  const displayAuthor =
+    question.isAnonymous && !user?.isAdmin ? "Anonymous" : question.author
   const timeAgo = getTimeAgo(question.createdAt)
 
   return (
@@ -51,7 +53,7 @@ export function QuestionCard({
         </Link>
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <span>Asked by {question.author}</span>
+          <span>Asked by {displayAuthor}</span>
           <span>{timeAgo}</span>
           {question.answer && (
             <span className="flex items-center gap-1 text-primary">
