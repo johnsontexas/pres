@@ -108,7 +108,7 @@ export default function AboutPage() {
           <aside className="fade-in lg:sticky lg:top-24 lg:h-fit">
             <div className="overflow-hidden rounded-3xl bg-white">
               <Image
-                src="/images/candidate.jpg"
+                src="/images/candidate.png"
                 alt="Daniel Johnson"
                 width={400}
                 height={500}

@@ -63,7 +63,7 @@ export function Hero() {
               <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-primary/20 to-accent/20 blur-2xl" />
               <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-card shadow-2xl bg-white">
                 <Image
-                  src="/images/candidate.jpg"
+                  src="/images/candidate.png"
                   alt="Daniel Johnson"
                   width={600}
                   height={700}

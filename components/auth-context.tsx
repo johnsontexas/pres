@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react"
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react"
 import type { ReactNode } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
@@ -68,6 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe()
   }, [supabase])
+
+  const syncedAdmin = useRef(false)
+  useEffect(() => {
+    if (!user?.isAdmin || syncedAdmin.current) return
+    syncedAdmin.current = true
+    fetch("/api/sync-admin", { method: "POST" }).catch(() => {})
+  }, [user?.isAdmin])
 
   const signInWithGoogle = useCallback(
     async (callbackUrl = "/questions") => {
