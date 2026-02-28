@@ -6,7 +6,7 @@ export function Contact() {
       <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
         <div className="fade-in">
           <h2 className="font-serif text-4xl font-bold text-foreground md:text-5xl">
-            Get in Touch
+            Get in Touch With Me
           </h2>
           <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-accent" />
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
