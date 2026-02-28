@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Mail, Heart } from "lucide-react"
+import { ArrowLeft, Mail, Cross } from "lucide-react"
 
 export const metadata = {
   title: "About Daniel Johnson — House Council President Candidate",
@@ -64,7 +64,7 @@ export default function AboutPage() {
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border bg-card p-6">
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Heart className="h-6 w-6 text-primary" />
+                    <Cross className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="mb-2 font-semibold text-foreground">Faith First</h3>
                   <p className="text-sm leading-relaxed text-muted-foreground">
@@ -106,7 +106,7 @@ export default function AboutPage() {
           </div>
 
           <aside className="fade-in lg:sticky lg:top-24 lg:h-fit">
-            <div className="overflow-hidden rounded-3xl">
+            <div className="overflow-hidden rounded-3xl bg-white">
               <Image
                 src="/images/candidate.jpg"
                 alt="Daniel Johnson"

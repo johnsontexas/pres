@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Mail, Instagram, Heart } from "lucide-react"
+import { Mail, Instagram, Cross } from "lucide-react"
 
 export function SiteFooter() {
   return (
@@ -13,7 +13,7 @@ export function SiteFooter() {
               Leadership that listens. A voice for every Crusader.
             </p>
             <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-              <Heart className="h-3.5 w-3.5 text-accent" />
+              <Cross className="h-3.5 w-3.5 text-accent" />
               Ad Majorem Dei Gloriam
             </p>
           </div>

@@ -41,16 +41,18 @@ export default function AskPage() {
     }
 
     const supabase = createClient()
-    // Block banned users from asking
-    const { data: bannedRow } = await supabase
-      .from("banned_askers")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle()
+    // Block banned users from asking (admins can always ask)
+    if (!user.isAdmin) {
+      const { data: bannedRow } = await supabase
+        .from("banned_askers")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle()
 
-    if (bannedRow) {
-      setError("You are not allowed to ask new questions at this time.")
-      return
+      if (bannedRow) {
+        setError("You are not allowed to ask new questions at this time.")
+        return
+      }
     }
 
     // Simple rate limit: max 5 questions per user per hour

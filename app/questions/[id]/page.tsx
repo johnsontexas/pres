@@ -81,13 +81,18 @@ export default function QuestionDetailPage() {
     if (!user?.isAdmin || !question) return
     const supabase = createClient()
     if (isBanned) {
-      await supabase.from("banned_askers").delete().eq("user_id", question.authorId)
-      setIsBanned(false)
-    } else {
-      await supabase
+      const { error } = await supabase
         .from("banned_askers")
-        .upsert({ user_id: question.authorId })
-      setIsBanned(true)
+        .delete()
+        .eq("user_id", question.authorId)
+      if (!error) setIsBanned(false)
+    } else {
+      const { error } = await supabase
+        .from("banned_askers")
+        .insert({ user_id: question.authorId })
+      if (!error) setIsBanned(true)
+      // If duplicate, still show as banned
+      if (error?.code === "23505") setIsBanned(true)
     }
   }
 
