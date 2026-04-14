@@ -90,7 +90,7 @@ export default function QuestionDetailPage() {
       const { error } = await supabase
         .from("banned_askers")
         .insert({ user_id: question.authorId })
-      // Success, or duplicate key (already banned) — both mean user is banned
+      // Success, or duplicate key (already banned), both mean user is banned
       if (!error || error.code === "23505") {
         setIsBanned(true)
       }

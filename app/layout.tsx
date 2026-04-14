@@ -11,7 +11,7 @@ const inter = Inter({
   display: "swap",
 })
 
-/** Clean geometric sans — Helvetica-like for titles and main nav */
+/** Clean geometric sans, Helvetica-like for titles and main nav */
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-dm-sans",
@@ -26,8 +26,8 @@ const sourceSerif = Source_Serif_4({
 })
 
 export const metadata: Metadata = {
-  title: "Vote Daniel Johnson — House Council President",
-  description: `${CAMPAIGN_SLOGAN} — House Council President, Strake Jesuit College Preparatory.`,
+  title: "Vote Daniel Johnson, House Council President",
+  description: `${CAMPAIGN_SLOGAN}, House Council President, Strake Jesuit College Preparatory.`,
   metadataBase: new URL("https://pickdaniel.com"),
   icons: {
     icon: "/favicon.png",

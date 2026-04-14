@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Mail, Cross } from "lucide-react"
 
 export const metadata = {
-  title: "About Daniel Johnson — House Council President Candidate",
+  title: "About Daniel Johnson, House Council President Candidate",
   description: "Learn more about Daniel Johnson and his journey at Strake Jesuit College Preparatory.",
 }
 
@@ -108,7 +108,7 @@ export default function AboutPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>Current Student at Strake Jesuit</li>
                 <li>Active in School Clubs & Athletics</li>
-                <li>Committed to Community Service</li>
+                <li>Keeping God a priority</li>
                 <li>Running for House Council President</li>
               </ul>
             </div>

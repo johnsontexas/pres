@@ -18,7 +18,7 @@ export function Quote() {
           </p>
         </blockquote>
         <p className="mt-8 border-t border-primary-foreground/20 pt-6 text-sm font-medium text-primary-foreground/85">
-          — Daniel Johnson
+          Daniel Johnson
         </p>
         <p className="mt-1 text-xs text-primary-foreground/60">House Council President candidate</p>
       </div>

@@ -31,7 +31,7 @@ export function Hero() {
             {CAMPAIGN_SLOGAN}
           </p>
           <p className="mt-4 max-w-md text-sm text-primary-foreground/75">
-            Glad you&apos;re here — if something&apos;s on your mind, the Q&amp;A page is the best place to reach me.
+            Glad you&apos;re here, if something&apos;s on your mind, the Q&amp;A page is the best place to reach me.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 md:justify-start">
             <a
