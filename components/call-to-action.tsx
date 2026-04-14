@@ -1,6 +1,8 @@
+import Link from "next/link"
+
 export function CallToAction() {
   return (
-    <section className="border-t border-primary/10 bg-background py-20 md:py-28">
+    <section id="contact" className="border-t border-primary/10 bg-background py-20 md:py-28">
       <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
         <h2 className="font-serif text-3xl font-bold text-foreground md:text-4xl text-balance">
           Make your voice heard
@@ -21,6 +23,11 @@ export function CallToAction() {
           >
             @danieljohnsontx on Instagram
           </a>
+        </div>
+        <div className="mt-10">
+          <Link href="/questions" className="text-base font-medium text-primary hover:underline">
+            Have questions? Ask me anything →
+          </Link>
         </div>
       </div>
     </section>

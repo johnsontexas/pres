@@ -1,11 +1,14 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Cross } from "lucide-react"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
+
+const JOIN_CAMPAIGN_FORM_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSe6uhueV-xclcAqBUoOqE5WVggvSNK3NEi2qUHVlvrZev7KBQ/viewform"
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden bg-primary">
-      {/* Depth without changing the core green */}
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
         aria-hidden
@@ -43,6 +46,15 @@ export function Hero() {
             >
               Ask me a question
             </Link>
+            <a
+              href={JOIN_CAMPAIGN_FORM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl border-2 border-accent/50 bg-accent/15 px-7 py-3 text-sm font-semibold text-primary-foreground transition hover:border-accent hover:bg-accent/25"
+            >
+              <Cross className="h-4 w-4" />
+              Join the campaign
+            </a>
           </div>
         </div>
 
