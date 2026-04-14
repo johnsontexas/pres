@@ -29,33 +29,39 @@ const planks = [
 
 export function Platform() {
   return (
-    <section id="platform" className="bg-secondary py-20 md:py-28">
-      <div className="mx-auto max-w-6xl px-6 lg:px-8">
+    <section id="platform" className="relative bg-secondary py-20 md:py-28">
+      <div className="pointer-events-none absolute left-8 top-24 hidden h-32 w-32 rounded-full border border-primary/10 md:block" />
+      <div className="pointer-events-none absolute bottom-16 right-10 hidden h-24 w-24 rounded-full bg-accent/10 md:block" />
+
+      <div className="relative mx-auto max-w-6xl px-6 lg:px-8">
         <div className="text-center">
           <h2 className="font-serif text-3xl font-bold text-foreground md:text-4xl text-balance">
             My Platform
           </h2>
-          <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-accent" />
-          <p className="mx-auto mt-6 max-w-2xl text-muted-foreground">
-            My goal is to make school more fun, more connected, and more faith-filled by bringing energy to Game Days, listening to students, adding competitions and activities, and always keeping God at the center.
+          <div className="mx-auto mt-3 h-1 w-24 rounded-full bg-gradient-to-r from-transparent via-primary to-transparent" />
+          <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Quick facts
+          </p>
+          <p className="mx-auto mt-3 max-w-2xl font-serif text-lg italic text-foreground/90 md:text-xl">
+            Running for House Council President, committed to making every voice heard, wants to lead by faith and teamwork.
           </p>
         </div>
 
         <div className="mt-14 grid gap-6 sm:grid-cols-2">
-          {planks.map((plank) => (
+          {planks.map((plank, i) => (
             <div
               key={plank.title}
-              className="group rounded-xl border border-border bg-card p-8 transition-shadow hover:shadow-lg"
+              className={`group relative rounded-2xl border border-border/80 bg-card p-7 shadow-sm transition hover:shadow-md md:p-8 ${
+                i % 2 === 1 ? "md:translate-y-3" : "md:-rotate-[0.3deg]"
+              }`}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/12 text-primary shadow-inner ring-1 ring-primary/15 transition group-hover:bg-primary group-hover:text-primary-foreground group-hover:ring-primary/30">
                 <plank.icon className="h-6 w-6" />
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-card-foreground">
+              <h3 className="mt-5 font-serif text-lg font-semibold text-card-foreground">
                 {plank.title}
               </h3>
-              <p className="mt-2 leading-relaxed text-muted-foreground">
-                {plank.description}
-              </p>
+              <p className="mt-2 leading-relaxed text-muted-foreground">{plank.description}</p>
             </div>
           ))}
         </div>

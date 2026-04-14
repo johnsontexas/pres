@@ -1,55 +1,67 @@
 import Image from "next/image"
 import Link from "next/link"
+import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden bg-primary">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-6 py-20 md:flex-row md:py-28 lg:px-8">
-        {/* Text Content */}
+      {/* Depth without changing the core green */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        aria-hidden
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 20% 20%, oklch(0.55 0.12 145 / 0.35), transparent 55%), radial-gradient(ellipse 60% 40% at 90% 80%, oklch(0.45 0.15 25 / 0.2), transparent 50%)",
+        }}
+      />
+
+      <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-10 px-6 py-20 md:flex-row md:items-center md:gap-12 md:py-28 lg:px-8">
         <div className="flex flex-1 flex-col items-center text-center md:items-start md:text-left">
-          <span className="mb-4 inline-block rounded-full border border-primary-foreground/20 px-4 py-1.5 text-sm font-medium tracking-wide text-primary-foreground/80 uppercase">
-            House Council President
+          <span className="mb-3 inline-block max-w-md rounded-2xl border border-primary-foreground/25 bg-primary-foreground/5 px-4 py-2 text-xs font-medium tracking-wide text-primary-foreground/85 md:text-sm">
+            Running for <span className="text-accent">House Council President</span>
           </span>
-          <h1 className="font-serif text-5xl font-bold leading-tight tracking-tight text-primary-foreground md:text-6xl lg:text-7xl text-balance">
+          <h1 className="font-serif text-5xl font-bold leading-[1.08] tracking-tight text-primary-foreground md:text-6xl lg:text-7xl text-balance">
             Vote{" "}
-            <span className="text-accent">Daniel Johnson</span>
+            <span className="text-accent drop-shadow-sm">Daniel Johnson</span>
           </h1>
-          <p className="mt-6 max-w-lg text-lg leading-relaxed text-primary-foreground/80">
-            Leadership that listens. A voice for every Crusader.
+          <p className="font-hand mt-5 max-w-md text-2xl leading-snug text-primary-foreground/95 md:text-3xl">
+            {CAMPAIGN_SLOGAN}
           </p>
-          <div className="mt-8 flex flex-wrap gap-4">
+          <p className="mt-4 max-w-md text-sm italic text-primary-foreground/70">
+            Glad you&apos;re here — if something&apos;s on your mind, the Q&amp;A page is the best place to reach me.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 md:justify-start">
             <a
               href="#platform"
-              className="rounded-lg bg-primary-foreground px-8 py-3 text-sm font-semibold text-primary transition-opacity hover:opacity-90"
+              className="rounded-2xl bg-primary-foreground px-7 py-3 text-sm font-semibold text-primary shadow-md transition hover:translate-y-[-1px] hover:shadow-lg"
             >
-              See My Platform
+              See my platform
             </a>
             <Link
               href="/questions"
-              className="rounded-lg border border-primary-foreground/30 px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-foreground/10"
+              className="rounded-2xl border-2 border-primary-foreground/35 bg-primary-foreground/5 px-7 py-3 text-sm font-semibold text-primary-foreground backdrop-blur-sm transition hover:border-primary-foreground/50 hover:bg-primary-foreground/10"
             >
-              Ask Me a Question
+              Ask me a question
             </Link>
           </div>
         </div>
 
-        {/* Candidate Photo */}
-        <div className="flex flex-1 justify-center md:justify-end">
+        <div className="flex w-full flex-1 justify-center md:justify-end">
           <div className="relative">
-            <div className="absolute -inset-2 rounded-2xl bg-accent/30" />
+            <div className="absolute -inset-3 rotate-[-2deg] rounded-3xl bg-gradient-to-br from-accent/40 to-primary-foreground/10" />
+            <div className="absolute -right-2 -top-2 h-14 w-14 rounded-full border-2 border-primary-foreground/20 bg-primary-foreground/10 md:h-16 md:w-16" />
             <Image
               src="/images/candidate.jpg"
-              alt="Candidate portrait photo"
+              alt="Daniel Johnson"
               width={360}
               height={440}
-              className="relative rounded-2xl object-cover shadow-2xl"
+              className="relative rotate-[-1.5deg] rounded-2xl object-cover shadow-2xl ring-2 ring-primary-foreground/15"
               priority
             />
           </div>
         </div>
       </div>
 
-      {/* Decorative bottom wave */}
       <div className="absolute bottom-0 left-0 right-0">
         <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
           <path

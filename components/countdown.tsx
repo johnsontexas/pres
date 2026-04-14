@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 
-const ELECTION_DATE = new Date("2026-05-01T08:00:00")
+/** Start of election week (countdown target). */
+const ELECTION_WEEK_START = new Date("2026-04-27T08:00:00")
 
 function getTimeLeft() {
   const now = new Date()
-  const diff = ELECTION_DATE.getTime() - now.getTime()
+  const diff = ELECTION_WEEK_START.getTime() - now.getTime()
 
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true }
@@ -24,7 +25,7 @@ function getTimeLeft() {
 function TimeBlock({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-2xl font-bold text-primary-foreground tabular-nums md:h-20 md:w-20 md:text-3xl">
+      <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground shadow-inner ring-1 ring-primary-foreground/15 tabular-nums md:h-20 md:w-20 md:text-3xl">
         {String(value).padStart(2, "0")}
       </span>
       <span className="mt-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -48,10 +49,10 @@ export function Countdown() {
     return (
       <section className="bg-background px-6 py-16 text-center">
         <h2 className="font-serif text-3xl font-bold text-primary md:text-4xl">
-          Election Day Is Here!
+          Election Week Is Here!
         </h2>
         <p className="mt-3 text-lg text-muted-foreground">
-          Go vote today. Make your voice heard.
+          Go vote during election week. Make your voice heard.
         </p>
       </section>
     )
@@ -60,10 +61,10 @@ export function Countdown() {
   return (
     <section className="bg-background px-6 py-16 text-center">
       <h2 className="font-serif text-2xl font-bold text-foreground md:text-3xl text-balance">
-        Countdown to Election Day
+        Countdown to Election Week
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        May 1, 2026
+        Begins April 27, 2026
       </p>
       <div className="mt-8 flex items-center justify-center gap-3 md:gap-6">
         <TimeBlock value={time.days} label="Days" />
