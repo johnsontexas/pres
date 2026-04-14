@@ -19,10 +19,10 @@ export function SiteHeader() {
   const { user, signOut } = useAuth()
 
   return (
-    <header className="sticky top-0 z-50 border-b border-primary-foreground/10 bg-primary/95 backdrop-blur-md">
+    <header className="font-display sticky top-0 z-50 border-b border-primary-foreground/10 bg-primary/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <div className="flex min-w-0 flex-col">
-          <Link href="/" className="font-serif text-lg font-bold tracking-tight text-primary-foreground">
+          <Link href="/" className="text-lg font-bold tracking-tight text-primary-foreground">
             Vote Daniel Johnson
           </Link>
           <span className="mt-0.5 max-w-[min(100%,22rem)] text-[11px] font-medium leading-relaxed text-primary-foreground/75 sm:max-w-xl sm:text-xs md:max-w-2xl">

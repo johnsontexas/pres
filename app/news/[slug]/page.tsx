@@ -60,8 +60,8 @@ export default function NewsPostPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border/50 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
+      <div className="mx-auto max-w-4xl px-6 pt-6">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/news"
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -79,6 +79,7 @@ export default function NewsPostPage() {
                 Edit
               </Link>
               <button
+                type="button"
                 onClick={handleDelete}
                 className="flex items-center gap-2 rounded-full border border-destructive/20 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
               >
@@ -90,7 +91,7 @@ export default function NewsPostPage() {
         </div>
       </div>
 
-      <article className="mx-auto max-w-4xl px-6 py-16 lg:py-24">
+      <article className="mx-auto max-w-4xl px-6 pb-16 lg:pb-24">
         {post.imageUrl && (
           <div className="mb-12 aspect-[21/9] w-full overflow-hidden rounded-3xl">
             <img

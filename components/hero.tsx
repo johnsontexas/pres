@@ -14,7 +14,7 @@ export function Hero() {
         aria-hidden
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 20% 20%, oklch(0.55 0.12 145 / 0.35), transparent 55%), radial-gradient(ellipse 60% 40% at 90% 80%, oklch(0.45 0.15 25 / 0.2), transparent 50%)",
+            "radial-gradient(ellipse 80% 60% at 20% 20%, oklch(0.55 0.12 145 / 0.35), transparent 55%)",
         }}
       />
 
@@ -23,7 +23,7 @@ export function Hero() {
           <span className="mb-3 inline-block max-w-md rounded-lg border border-primary-foreground/25 bg-primary-foreground/5 px-4 py-2 text-xs font-medium tracking-wide text-primary-foreground/90 md:text-sm">
             Running for <span className="text-accent">House Council President</span>
           </span>
-          <h1 className="font-serif text-5xl font-bold leading-[1.08] tracking-tight text-primary-foreground md:text-6xl lg:text-7xl text-balance">
+          <h1 className="font-display text-5xl font-bold leading-[1.08] tracking-tight text-primary-foreground md:text-6xl lg:text-7xl text-balance">
             Vote{" "}
             <span className="text-accent">Daniel Johnson</span>
           </h1>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
-import { MessageSquarePlus, ArrowLeft } from "lucide-react"
+import { MessageSquarePlus } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { QuestionCard } from "@/components/question-card"
 import { getQuestions, toggleUpvote, deleteQuestion } from "@/lib/questions"
@@ -49,16 +49,8 @@ export default function QuestionsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <div className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Campaign
-          </Link>
+      <div className="mx-auto max-w-3xl px-6 pt-6">
+        <div className="mb-6 flex justify-end">
           {user ? (
             <Link
               href="/questions/ask"
@@ -79,7 +71,7 @@ export default function QuestionsPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="mx-auto max-w-3xl px-6 pb-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold text-foreground md:text-4xl">

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, ShieldCheck } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { Suspense } from "react"
 
@@ -51,14 +51,6 @@ function SignInForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="w-full max-w-sm">
-        <Link
-          href="/"
-          className="mb-8 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Campaign
-        </Link>
-
         <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
           <h1 className="font-serif text-2xl font-bold text-foreground">Sign In</h1>
           <p className="mt-1 text-sm text-muted-foreground">

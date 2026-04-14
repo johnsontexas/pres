@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Calendar } from "lucide-react"
+import { Plus, Calendar } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { getPublishedPosts, getAllPosts } from "@/lib/news"
 import type { NewsPost } from "@/lib/news"
@@ -24,28 +24,19 @@ export default function NewsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border/50 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      {user?.isAdmin && (
+        <div className="mx-auto flex max-w-6xl justify-end px-6 pt-6">
           <Link
-            href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            href="/news/new"
+            className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            <Plus className="h-4 w-4" />
+            New Post
           </Link>
-          {user?.isAdmin && (
-            <Link
-              href="/news/new"
-              className="flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <Plus className="h-4 w-4" />
-              New Post
-            </Link>
-          )}
         </div>
-      </div>
+      )}
 
-      <div className="mx-auto max-w-6xl px-6 py-16 lg:py-24">
+      <div className="mx-auto max-w-6xl px-6 py-12 lg:py-20">
         <div className="fade-in mb-16 text-center">
           <h1 className="font-serif text-5xl font-bold leading-tight text-foreground md:text-6xl">
             Campaign News

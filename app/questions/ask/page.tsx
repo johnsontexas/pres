@@ -74,19 +74,14 @@ export default function AskPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-2xl items-center px-6 py-4">
-          <Link
-            href="/questions"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Questions
-          </Link>
-        </div>
-      </div>
-
       <div className="mx-auto max-w-2xl px-6 py-8">
+        <Link
+          href="/questions"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          All Questions
+        </Link>
         <h1 className="font-serif text-2xl font-bold text-foreground md:text-3xl">
           Ask a Question
         </h1>

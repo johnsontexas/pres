@@ -30,9 +30,6 @@ const planks = [
 export function Platform() {
   return (
     <section id="platform" className="relative bg-secondary py-20 md:py-28">
-      <div className="pointer-events-none absolute left-8 top-24 hidden h-32 w-32 rounded-full border border-primary/10 md:block" />
-      <div className="pointer-events-none absolute bottom-16 right-10 hidden h-24 w-24 rounded-full bg-accent/10 md:block" />
-
       <div className="relative mx-auto max-w-6xl px-6 lg:px-8">
         <div className="text-center">
           <h2 className="font-serif text-3xl font-bold text-foreground md:text-4xl text-balance">

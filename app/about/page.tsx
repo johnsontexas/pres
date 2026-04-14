@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, Mail, Cross } from "lucide-react"
+import { Mail, Cross } from "lucide-react"
 
 export const metadata = {
   title: "About Daniel Johnson — House Council President Candidate",
@@ -10,19 +10,7 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border/50 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center px-6 py-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </div>
-      </div>
-
-      <article className="mx-auto max-w-4xl px-6 py-16 lg:py-24">
+      <article className="mx-auto max-w-4xl px-6 py-12 lg:py-20">
         <div className="fade-in">
           <h1 className="font-serif text-5xl font-bold leading-tight text-foreground md:text-6xl lg:text-7xl">
             More About Me

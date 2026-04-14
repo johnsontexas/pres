@@ -85,19 +85,14 @@ export default function EditPostPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border/50 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center px-6 py-4">
-          <Link
-            href={`/news/${slug}`}
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Post
-          </Link>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-4xl px-6 py-16">
+      <div className="mx-auto max-w-4xl px-6 py-12 lg:py-16">
+        <Link
+          href={`/news/${slug}`}
+          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          View post
+        </Link>
         <h1 className="font-serif text-4xl font-bold text-foreground">
           Edit Post
         </h1>
