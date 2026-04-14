@@ -33,28 +33,28 @@ export default function AboutPage() {
         <div className="mt-16 grid gap-16 lg:grid-cols-[2fr_1fr]">
           <div className="space-y-8 fade-in">
             <section>
-              <h2 className="mb-4 text-2xl font-bold text-foreground">My Story</h2>
+              <h2 className="mb-4 font-serif text-2xl font-bold text-foreground">My Story</h2>
               <div className="space-y-4 text-lg leading-relaxed text-muted-foreground">
                 <p>
-                  I'm Daniel Johnson, a student at Strake Jesuit College Preparatory, and I'm running for House Council President because I believe in the power of student voice and community engagement.
+                  Hi, I&apos;m Daniel Johnson, a junior running for House Council President. I want to run to increase participation in our community through the house system. I want to lead with faith in Christ and through openness to the suggestions of fellow students.
                 </p>
                 <p>
-                  Throughout my time at Strake, I've been involved in various clubs, athletics, and community service activities. These experiences have taught me the importance of leadership, collaboration, and making sure every voice is heard.
+                  Strake is an amazing school with so many opportunities to be men for others and during my time at Strake, I have been involved in several activities and groups that have taught me the importance of strong leadership and its impact on the community and I&apos;m honored to run for this position.
                 </p>
                 <p>
-                  What sets me apart is my commitment to listening. I don't just want to lead — I want to serve. I want to be the bridge between the student body and the administration, ensuring that your ideas, concerns, and dreams for our school are not just heard, but acted upon.
+                  What sets me apart is my commitment to making every voice heard. I want to be as transparent as possible and want to be a strong representative for every student at Strake. Please feel free to reach out to me through email, social media, or in person, I would love to talk.
                 </p>
               </div>
             </section>
 
             <section>
-              <h2 className="mb-4 text-2xl font-bold text-foreground">Why I'm Running</h2>
+              <h2 className="mb-4 font-serif text-2xl font-bold text-foreground">Why I&apos;m Running</h2>
               <div className="space-y-4 text-lg leading-relaxed text-muted-foreground">
                 <p>
-                  Our school has incredible potential, and I see opportunities everywhere to make the Strake Jesuit experience even better. From energizing Game Days to creating more opportunities for student involvement, from strengthening our faith community to ensuring every student feels represented — these aren't just campaign promises, they're commitments.
+                  The Strake Jesuit house system is an amazing, core part of our school, but I believe there are even more ways to build connections, grow in faith, and make events more engaging and enjoyable for everyone.
                 </p>
                 <p>
-                  I'm running because I believe in us. I believe in what we can accomplish together when we work as one community with shared values and goals.
+                  As President, I want to be fully involved and ensure that every student feels included and has a great experience at house related events.
                 </p>
               </div>
             </section>
@@ -106,13 +106,13 @@ export default function AboutPage() {
           </div>
 
           <aside className="fade-in lg:sticky lg:top-24 lg:h-fit">
-            <div className="overflow-hidden rounded-3xl bg-white">
+            <div className="overflow-hidden rounded-2xl bg-transparent">
               <Image
                 src="/images/candidate.png"
                 alt="Daniel Johnson"
                 width={400}
                 height={500}
-                className="h-auto w-full object-cover"
+                className="h-auto w-full object-contain"
               />
             </div>
             <div className="mt-6 rounded-2xl border border-border bg-card p-6">

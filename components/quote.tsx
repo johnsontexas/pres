@@ -1,3 +1,5 @@
+import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
+
 export function Quote() {
   return (
     <section className="relative overflow-hidden bg-primary py-16 md:py-24">
@@ -10,18 +12,15 @@ export function Quote() {
         }}
       />
       <div className="relative mx-auto max-w-3xl px-6 text-center lg:px-8">
-        <p className="font-hand text-4xl leading-none text-primary-foreground/50 md:text-5xl" aria-hidden>
-          “
-        </p>
         <blockquote>
-          <p className="font-serif text-2xl font-medium italic leading-relaxed text-primary-foreground md:text-3xl text-balance">
-            I&apos;m not just running for a title — I&apos;m running to make sure every student at Strake Jesuit has a seat at the table.
+          <p className="font-serif text-lg font-semibold leading-relaxed text-primary-foreground md:text-xl lg:text-2xl text-balance">
+            {CAMPAIGN_SLOGAN}
           </p>
         </blockquote>
-        <p className="mt-8 border-t border-primary-foreground/20 pt-6 font-sans text-sm font-medium text-primary-foreground/80">
+        <p className="mt-8 border-t border-primary-foreground/20 pt-6 text-sm font-medium text-primary-foreground/85">
           — Daniel Johnson
         </p>
-        <p className="mt-1 text-xs text-primary-foreground/55">House Council President candidate</p>
+        <p className="mt-1 text-xs text-primary-foreground/60">House Council President candidate</p>
       </div>
     </section>
   )

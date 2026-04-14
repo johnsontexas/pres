@@ -20,29 +20,29 @@ export function Hero() {
 
       <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-10 px-6 py-20 md:flex-row md:items-center md:gap-12 md:py-28 lg:px-8">
         <div className="flex flex-1 flex-col items-center text-center md:items-start md:text-left">
-          <span className="mb-3 inline-block max-w-md rounded-2xl border border-primary-foreground/25 bg-primary-foreground/5 px-4 py-2 text-xs font-medium tracking-wide text-primary-foreground/85 md:text-sm">
+          <span className="mb-3 inline-block max-w-md rounded-lg border border-primary-foreground/25 bg-primary-foreground/5 px-4 py-2 text-xs font-medium tracking-wide text-primary-foreground/90 md:text-sm">
             Running for <span className="text-accent">House Council President</span>
           </span>
           <h1 className="font-serif text-5xl font-bold leading-[1.08] tracking-tight text-primary-foreground md:text-6xl lg:text-7xl text-balance">
             Vote{" "}
-            <span className="text-accent drop-shadow-sm">Daniel Johnson</span>
+            <span className="text-accent">Daniel Johnson</span>
           </h1>
-          <p className="font-hand mt-5 max-w-md text-2xl leading-snug text-primary-foreground/95 md:text-3xl">
+          <p className="mt-5 max-w-2xl text-balance font-serif text-base font-semibold leading-relaxed text-primary-foreground/95 sm:text-lg md:text-xl">
             {CAMPAIGN_SLOGAN}
           </p>
-          <p className="mt-4 max-w-md text-sm italic text-primary-foreground/70">
+          <p className="mt-4 max-w-md text-sm text-primary-foreground/75">
             Glad you&apos;re here — if something&apos;s on your mind, the Q&amp;A page is the best place to reach me.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 md:justify-start">
             <a
               href="#platform"
-              className="rounded-2xl bg-primary-foreground px-7 py-3 text-sm font-semibold text-primary shadow-md transition hover:translate-y-[-1px] hover:shadow-lg"
+              className="rounded-lg bg-primary-foreground px-7 py-3 text-sm font-semibold text-primary shadow-sm transition hover:opacity-95"
             >
               See my platform
             </a>
             <Link
               href="/questions"
-              className="rounded-2xl border-2 border-primary-foreground/35 bg-primary-foreground/5 px-7 py-3 text-sm font-semibold text-primary-foreground backdrop-blur-sm transition hover:border-primary-foreground/50 hover:bg-primary-foreground/10"
+              className="rounded-lg border border-primary-foreground/35 bg-primary-foreground/5 px-7 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary-foreground/10"
             >
               Ask me a question
             </Link>
@@ -50,7 +50,7 @@ export function Hero() {
               href={JOIN_CAMPAIGN_FORM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl border-2 border-accent/50 bg-accent/15 px-7 py-3 text-sm font-semibold text-primary-foreground transition hover:border-accent hover:bg-accent/25"
+              className="inline-flex items-center gap-2 rounded-lg border border-accent/50 bg-accent/15 px-7 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-accent/25"
             >
               <Cross className="h-4 w-4" />
               Join the campaign
@@ -58,16 +58,14 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="flex w-full flex-1 justify-center md:justify-end">
-          <div className="relative">
-            <div className="absolute -inset-3 rotate-[-2deg] rounded-3xl bg-gradient-to-br from-accent/40 to-primary-foreground/10" />
-            <div className="absolute -right-2 -top-2 h-14 w-14 rounded-full border-2 border-primary-foreground/20 bg-primary-foreground/10 md:h-16 md:w-16" />
+        <div className="flex w-full max-w-md flex-1 justify-center md:justify-end">
+          <div className="flex w-full items-center justify-center bg-transparent">
             <Image
-              src="/images/candidate.jpg"
+              src="/images/candidate.png"
               alt="Daniel Johnson"
-              width={360}
-              height={440}
-              className="relative rotate-[-1.5deg] rounded-2xl object-cover shadow-2xl ring-2 ring-primary-foreground/15"
+              width={400}
+              height={500}
+              className="h-auto w-full max-w-[320px] object-contain md:max-w-[360px]"
               priority
             />
           </div>

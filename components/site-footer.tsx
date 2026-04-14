@@ -10,7 +10,7 @@ export function SiteFooter() {
           <div className="lg:col-span-2">
             <h3 className="font-serif text-xl font-bold text-foreground">Vote Daniel Johnson</h3>
             <p className="mt-2 text-sm text-muted-foreground">{CAMPAIGN_SLOGAN}</p>
-            <p className="font-hand mt-3 text-lg text-primary">Thanks for reading.</p>
+            <p className="mt-3 text-sm font-medium text-muted-foreground">Thanks for reading.</p>
             <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
               <Cross className="h-3.5 w-3.5 text-accent" />
               Ad Majorem Dei Gloriam

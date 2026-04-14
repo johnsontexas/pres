@@ -108,10 +108,6 @@
 }
 
 @layer utilities {
-  .font-hand {
-    font-family: var(--font-hand), 'Caveat', cursive;
-  }
-
   .text-balance {
     text-wrap: balance;
   }

@@ -14,7 +14,9 @@ export function About() {
                 height={180}
                 className="object-contain"
               />
-              <p className="mt-4 text-center font-hand text-xl text-primary">Proud to be a Crusader</p>
+              <p className="mt-4 text-center text-sm font-semibold tracking-wide text-primary">
+                Proud to be a Crusader
+              </p>
             </div>
           </div>
 
@@ -36,7 +38,7 @@ export function About() {
             </div>
 
             <h3 className="mt-12 font-serif text-2xl font-bold text-foreground md:text-3xl">
-              Why I&apos;m running
+              Why I&apos;m Running
             </h3>
             <div className="mt-2 h-1 w-14 rounded-full bg-accent/80" />
             <p className="mt-6 leading-relaxed text-muted-foreground">

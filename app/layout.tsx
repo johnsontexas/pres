@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Caveat, Inter, Source_Serif_4 } from "next/font/google"
+import { Inter, Source_Serif_4 } from "next/font/google"
 import { AuthProvider } from "@/components/auth-context"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
 import "./globals.css"
@@ -13,13 +13,6 @@ const inter = Inter({
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   variable: "--font-source-serif",
-  display: "swap",
-})
-
-const caveat = Caveat({
-  subsets: ["latin"],
-  variable: "--font-hand",
-  weight: ["600", "700"],
   display: "swap",
 })
 
@@ -44,9 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${sourceSerif.variable} ${caveat.variable} font-sans antialiased`}
-      >
+      <body className={`${inter.variable} ${sourceSerif.variable} font-sans antialiased`}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

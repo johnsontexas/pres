@@ -25,7 +25,7 @@ export function SiteHeader() {
           <Link href="/" className="font-serif text-lg font-bold tracking-tight text-primary-foreground">
             Vote Daniel Johnson
           </Link>
-          <span className="mt-0.5 max-w-[14rem] text-[11px] font-medium leading-snug text-primary-foreground/75 sm:max-w-none sm:text-xs">
+          <span className="mt-0.5 max-w-[min(100%,22rem)] text-[11px] font-medium leading-relaxed text-primary-foreground/75 sm:max-w-xl sm:text-xs md:max-w-2xl">
             {CAMPAIGN_SLOGAN}
           </span>
         </div>
