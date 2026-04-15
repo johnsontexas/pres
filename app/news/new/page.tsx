@@ -14,6 +14,11 @@ export default function NewPostPage() {
   const [excerpt, setExcerpt] = useState("")
   const [content, setContent] = useState("")
   const [imageUrl, setImageUrl] = useState("")
+  const [links, setLinks] = useState([
+    { label: "", url: "" },
+    { label: "", url: "" },
+    { label: "", url: "" },
+  ])
   const [isPublished, setIsPublished] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -46,6 +51,9 @@ export default function NewPostPage() {
       isPublished,
       imageUrl: imageUrl.trim() || null,
       slug,
+      links: links
+        .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+        .filter((link) => link.label && link.url),
     })
     router.push("/news")
   }
@@ -121,6 +129,40 @@ export default function NewPostPage() {
               placeholder="https://example.com/image.jpg (optional)"
               className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-foreground">
+              Optional Links
+            </label>
+            <div className="space-y-3">
+              {links.map((link, index) => (
+                <div key={index} className="grid gap-3 md:grid-cols-[1fr_2fr]">
+                  <input
+                    type="text"
+                    value={link.label}
+                    onChange={(e) => {
+                      const next = [...links]
+                      next[index] = { ...next[index], label: e.target.value }
+                      setLinks(next)
+                    }}
+                    placeholder="Link title"
+                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
+                  />
+                  <input
+                    type="url"
+                    value={link.url}
+                    onChange={(e) => {
+                      const next = [...links]
+                      next[index] = { ...next[index], url: e.target.value }
+                      setLinks(next)
+                    }}
+                    placeholder="https://example.com"
+                    className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

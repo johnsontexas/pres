@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Calendar, Edit2, Trash2 } from "lucide-react"
+import { ArrowLeft, Calendar, Edit2, Heart, Link as LinkIcon, Trash2 } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
-import { getPostBySlug, deletePost } from "@/lib/news"
+import { getPostBySlug, deletePost, togglePostLike } from "@/lib/news"
 import type { NewsPost } from "@/lib/news"
 
 export default function NewsPostPage() {
@@ -31,6 +31,16 @@ export default function NewsPostPage() {
     if (!post) return
     await deletePost(post.id)
     router.push("/news")
+  }
+
+  const handleLike = async () => {
+    if (!user || !post) {
+      router.push(`/signin?redirect=/news/${slug}`)
+      return
+    }
+
+    const updated = await togglePostLike(post.id)
+    if (updated) setPost(updated)
   }
 
   if (isLoading) {
@@ -121,11 +131,41 @@ export default function NewsPostPage() {
             {post.title}
           </h1>
 
+          {post.links.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {post.links.map((link) => (
+                <a
+                  key={`${link.label}-${link.url}`}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-primary hover:bg-muted"
+                >
+                  <LinkIcon className="h-3.5 w-3.5" />
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )}
+
           {post.excerpt && (
             <p className="mt-6 text-xl leading-relaxed text-muted-foreground">
               {post.excerpt}
             </p>
           )}
+
+          <button
+            type="button"
+            onClick={handleLike}
+            className={`mt-6 inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+              user && post.likes.includes(user.id)
+                ? "border-destructive/25 bg-destructive/10 text-destructive"
+                : "border-border text-foreground hover:bg-muted"
+            }`}
+          >
+            <Heart className={`h-4 w-4 ${user && post.likes.includes(user.id) ? "fill-current" : ""}`} />
+            {post.likes.length} {post.likes.length === 1 ? "like" : "likes"}
+          </button>
 
           <div className="prose prose-lg mt-12 max-w-none">
             <div

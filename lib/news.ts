@@ -13,6 +13,13 @@ export type NewsPost = {
   isPublished: boolean
   imageUrl: string | null
   slug: string
+  links: NewsPostLink[]
+  likes: string[]
+}
+
+export type NewsPostLink = {
+  label: string
+  url: string
 }
 
 function mapFromDb(row: {
@@ -28,6 +35,8 @@ function mapFromDb(row: {
   is_published: boolean
   image_url: string | null
   slug: string
+  links?: NewsPostLink[] | null
+  likes?: string[] | null
 }): NewsPost {
   return {
     id: row.id,
@@ -42,6 +51,8 @@ function mapFromDb(row: {
     isPublished: row.is_published,
     imageUrl: row.image_url,
     slug: row.slug,
+    links: row.links ?? [],
+    likes: row.likes ?? [],
   }
 }
 
@@ -93,71 +104,74 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
 }
 
 export async function createPost(
-  post: Omit<NewsPost, "id" | "createdAt" | "updatedAt">
+  post: Omit<NewsPost, "id" | "createdAt" | "updatedAt" | "likes">
 ): Promise<NewsPost | null> {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("news_posts")
-    .insert({
+  const response = await fetch("/api/news", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
       title: post.title,
       excerpt: post.excerpt,
       content: post.content,
       author: post.author,
       author_id: post.authorId,
       published_at: post.publishedAt,
-      is_published: post.isPublished,
-      image_url: post.imageUrl,
+      isPublished: post.isPublished,
+      imageUrl: post.imageUrl,
       slug: post.slug,
-    })
-    .select("*")
-    .single()
+      links: post.links,
+    }),
+  })
+  const result = (await response.json()) as { ok: boolean; post?: Parameters<typeof mapFromDb>[0]; error?: string }
 
-  if (error || !data) {
-    console.error("Error creating post", error)
+  if (!response.ok || !result.ok || !result.post) {
+    console.error("Error creating post", result.error)
     return null
   }
 
-  return mapFromDb(data)
+  return mapFromDb(result.post)
 }
 
 export async function updatePost(
   id: string,
   updates: Partial<Omit<NewsPost, "id" | "createdAt" | "authorId" | "author">>
 ): Promise<NewsPost | null> {
-  const supabase = createClient()
-  const dbUpdates: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  }
+  const response = await fetch(`/api/news/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  })
+  const result = (await response.json()) as { ok: boolean; post?: Parameters<typeof mapFromDb>[0]; error?: string }
 
-  if (updates.title !== undefined) dbUpdates.title = updates.title
-  if (updates.excerpt !== undefined) dbUpdates.excerpt = updates.excerpt
-  if (updates.content !== undefined) dbUpdates.content = updates.content
-  if (updates.publishedAt !== undefined) dbUpdates.published_at = updates.publishedAt
-  if (updates.isPublished !== undefined) dbUpdates.is_published = updates.isPublished
-  if (updates.imageUrl !== undefined) dbUpdates.image_url = updates.imageUrl
-  if (updates.slug !== undefined) dbUpdates.slug = updates.slug
-
-  const { data, error } = await supabase
-    .from("news_posts")
-    .update(dbUpdates)
-    .eq("id", id)
-    .select("*")
-    .single()
-
-  if (error || !data) {
-    console.error("Error updating post", error)
+  if (!response.ok || !result.ok || !result.post) {
+    console.error("Error updating post", result.error)
     return null
   }
 
-  return mapFromDb(data)
+  return mapFromDb(result.post)
 }
 
 export async function deletePost(id: string): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase.from("news_posts").delete().eq("id", id)
-  if (error) {
-    console.error("Error deleting post", error)
+  const response = await fetch(`/api/news/${id}`, { method: "DELETE" })
+  if (!response.ok) {
+    console.error("Error deleting post", await response.text())
   }
+}
+
+export async function togglePostLike(id: string): Promise<NewsPost | null> {
+  const response = await fetch(`/api/news/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "toggle-like" }),
+  })
+  const result = (await response.json()) as { ok: boolean; post?: Parameters<typeof mapFromDb>[0]; error?: string }
+
+  if (!response.ok || !result.ok || !result.post) {
+    console.error("Error toggling post like", result.error)
+    return null
+  }
+
+  return mapFromDb(result.post)
 }
 
 export function generateSlug(title: string): string {

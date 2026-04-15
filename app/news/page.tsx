@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Plus, Calendar } from "lucide-react"
+import { Plus, Calendar, Heart } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { getPublishedPosts, getAllPosts } from "@/lib/news"
 import type { NewsPost } from "@/lib/news"
@@ -96,7 +96,11 @@ export default function NewsPage() {
                       {post.excerpt}
                     </p>
                     <div className="mt-4 text-sm font-medium text-primary">
-                      Read more →
+                      Read more
+                    </div>
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Heart className="h-3.5 w-3.5" />
+                      {post.likes.length} {post.likes.length === 1 ? "like" : "likes"}
                     </div>
                   </div>
                 </article>

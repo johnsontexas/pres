@@ -436,7 +436,7 @@ export function SignYourVote() {
   const shareSignature = async () => {
     if (!user) return
     const url = `${window.location.origin}/#sign-vote`
-    const text = `Vote Daniel Johnson for House Council President.\nAdd your signature and put my email (${user.email}) on your friend list to help me unlock glow colors:\n${url}`
+    const text = `Vote Daniel Johnson for House Council President.\nAdd your signature and put my email (${user.email}) on your friend list:\n${url}`
 
     try {
       if (navigator.share) {
@@ -469,7 +469,7 @@ export function SignYourVote() {
           </p>
         </div>
 
-        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-start justify-between gap-4 rounded-lg border border-border bg-card p-5 shadow-sm md:flex-row md:items-center">
+        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-start justify-between gap-4 rounded-lg border border-border bg-background p-5 md:flex-row md:items-center">
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h3 className="font-semibold text-foreground">Your signature</h3>
@@ -478,7 +478,7 @@ export function SignYourVote() {
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Open the signature UI to write, place, share, or check approval.
+              Write your signature, place it, and check its status.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -494,7 +494,7 @@ export function SignYourVote() {
               <button
                 type="button"
                 onClick={() => signInWithGoogle("/#sign-vote")}
-                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
                 Sign in to sign
               </button>
@@ -502,7 +502,7 @@ export function SignYourVote() {
               <button
                 type="button"
                 onClick={() => setIsPlacementOpen(true)}
-                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
                 Open signature UI
               </button>
@@ -512,12 +512,12 @@ export function SignYourVote() {
 
         {isPlacementOpen && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/45 px-4 py-6">
-            <div className="mx-auto w-full max-w-6xl rounded-lg border border-border bg-background p-4 shadow-xl md:p-6">
+            <div className="mx-auto w-full max-w-6xl rounded-lg border border-border bg-background p-4 shadow-lg md:p-6">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Signature UI</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Signature</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Place your signature around the hero without covering the text, buttons, or photo.
+                    Keep it off the text, buttons, and photo.
                   </p>
                 </div>
                 <button
@@ -604,7 +604,7 @@ export function SignYourVote() {
           </div>
         </div>
 
-        <div className="mx-auto mt-7 max-w-3xl rounded-lg border border-border bg-card p-5 shadow-sm">
+        <div className="mx-auto mt-7 max-w-3xl rounded-lg border border-border bg-background p-5">
           {!isLoading && !user && (
             <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
               <div>
@@ -646,7 +646,7 @@ export function SignYourVote() {
                     onClick={() => {
                       setIsCaptureOpen(true)
                     }}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
                   >
                     <PenLine className="h-4 w-4" />
                     Write your signature
@@ -661,7 +661,7 @@ export function SignYourVote() {
                   </button>
                 </div>
               </div>
-              <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+              <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                 {user.isAdmin
                   ? "Admin signatures are approved automatically. Student signatures still need your approval before they appear for everyone."
                   : "Note: every new or replaced signature must be approved by an admin before it appears for everyone."}
@@ -719,9 +719,9 @@ export function SignYourVote() {
                       </div>
                     </div>
                   </div>
-                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="rounded-lg border border-border p-3">
                     <label className="flex items-center justify-between gap-3 text-sm font-medium text-foreground">
-                      Glow color
+                      Glowing signature
                       <input
                         type="checkbox"
                         checked={draftPlacement.glowEnabled && referralState.glowUnlocked}
@@ -731,8 +731,8 @@ export function SignYourVote() {
                       />
                     </label>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {referralState.credits}/5 friends have added you. Unlock glow while 5 people
-                      keep you on their list.
+                      {referralState.credits}/5 friends have added you. Unlock a glowing signature
+                      while 5 people keep you on their list.
                     </p>
                   </div>
                   <button
@@ -749,32 +749,28 @@ export function SignYourVote() {
 
               {message && <p className="text-sm font-medium text-primary">{message}</p>}
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-              <div className="rounded-lg border-2 border-accent/45 bg-accent/10 p-5 shadow-sm">
+              <div className="rounded-lg border border-border bg-background p-4">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-foreground">
-                      Unlock glow colors
-                    </p>
-                    <h4 className="mt-1 text-xl font-bold text-foreground">
-                      Friend list challenge: {referralState.credits}/5
+                    <h4 className="font-semibold text-foreground">
+                      Glowing signature: {referralState.credits}/5
                     </h4>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Add up to 5 friends by email, then share your email so they add you back.
-                      Friends must already have a signature. You cannot add yourself.
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Add up to 5 friends by email. If 5 people add your email, a glowing signature unlocks.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={saveReferrals}
                     disabled={isSaving || !mine}
-                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-60"
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
                   >
                     Save list
                   </button>
                 </div>
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-background">
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-accent transition-all"
+                    className="h-full rounded-full bg-primary transition-all"
                     style={{ width: `${Math.min(referralState.credits, 5) * 20}%` }}
                   />
                 </div>
@@ -797,7 +793,7 @@ export function SignYourVote() {
                 <button
                   type="button"
                   onClick={shareSignature}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-accent/50 bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
                 >
                   <Share2 className="h-4 w-4" />
                   Share invite
