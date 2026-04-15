@@ -111,19 +111,25 @@ export async function getAllSignaturesForAdmin(): Promise<VoteSignature[]> {
 }
 
 export async function uploadSignaturePng(userId: string, blob: Blob) {
-  const supabase = createClient()
-  const path = `${userId}/${Date.now()}-${crypto.randomUUID()}.png`
-  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
-    contentType: "image/png",
-    cacheControl: "31536000",
-  })
+  const formData = new FormData()
+  formData.append("file", blob, `${userId}-signature.png`)
 
-  if (error) {
-    console.error("Error uploading signature PNG", error)
-    throw error
+  const response = await fetch("/api/vote-signatures/upload", {
+    method: "POST",
+    body: formData,
+  })
+  const result = (await response.json()) as {
+    ok: boolean
+    path?: string
+    error?: string
   }
 
-  return path
+  if (!response.ok || !result.ok || !result.path) {
+    console.error("Error uploading signature PNG", result.error)
+    throw new Error(result.error ?? "Error uploading signature PNG")
+  }
+
+  return result.path
 }
 
 export async function saveSignatureImage(input: {
@@ -133,56 +139,23 @@ export async function saveSignatureImage(input: {
   color: string
   isAdmin?: boolean
 }) {
-  if (input.isAdmin) {
-    const response = await fetch("/api/vote-signatures/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    })
-    const result = (await response.json()) as {
-      ok: boolean
-      signature?: VoteSignatureRow
-      error?: string
-    }
-
-    if (!response.ok || !result.ok || !result.signature) {
-      throw new Error(result.error ?? "Error saving admin signature")
-    }
-
-    return mapFromDb(result.signature)
+  const response = await fetch("/api/vote-signatures", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+  const result = (await response.json()) as {
+    ok: boolean
+    signature?: VoteSignatureRow
+    error?: string
   }
 
-  const supabase = createClient()
-  const { data: existing } = await supabase
-    .from("vote_signatures")
-    .select("id, x, y, width, rotation")
-    .eq("user_id", input.userId)
-    .maybeSingle()
-
-  const payload = {
-    user_id: input.userId,
-    author_name: input.authorName,
-    image_path: input.imagePath,
-    color: input.color,
-    x: Number(existing?.x ?? 0.4),
-    y: Number(existing?.y ?? 0.42),
-    width: Number(existing?.width ?? 0.18),
-    rotation: Number(existing?.rotation ?? 0),
-    status: "pending" as SignatureStatus,
+  if (!response.ok || !result.ok || !result.signature) {
+    console.error("Error saving signature", result.error)
+    throw new Error(result.error ?? "Error saving signature")
   }
 
-  const { data, error } = await supabase
-    .from("vote_signatures")
-    .upsert(payload, { onConflict: "user_id" })
-    .select("*")
-    .single()
-
-  if (error || !data) {
-    console.error("Error saving signature", error)
-    throw error
-  }
-
-  return mapFromDb(data as VoteSignatureRow)
+  return mapFromDb(result.signature)
 }
 
 export async function updateSignaturePlacement(
