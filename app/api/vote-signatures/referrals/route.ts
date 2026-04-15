@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server"
 
 const MAX_REFERRALS = 5
 
+type ReferralResult = {
+  email: string
+  status: "accepted" | "invalid"
+  reason?: string
+}
+
 async function getSignedInUser() {
   const supabase = await createClient()
   const {
@@ -17,13 +23,35 @@ async function getSignedInUser() {
   return { user, email: user.email.toLowerCase() }
 }
 
-function cleanEmails(emails: unknown) {
-  if (!Array.isArray(emails)) return []
-  return [...new Set(
-    emails
-      .map((email) => String(email).trim().toLowerCase())
-      .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-  )].slice(0, MAX_REFERRALS)
+function parseEmails(emails: unknown, ownEmail: string) {
+  const seen = new Set<string>()
+  const clean: string[] = []
+  const results: ReferralResult[] = []
+
+  if (!Array.isArray(emails)) return { clean, results }
+
+  for (const raw of emails.slice(0, MAX_REFERRALS)) {
+    const email = String(raw).trim().toLowerCase()
+    if (!email) continue
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      results.push({ email, status: "invalid", reason: "Not a valid email." })
+      continue
+    }
+    if (email === ownEmail) {
+      results.push({ email, status: "invalid", reason: "You cannot add yourself." })
+      continue
+    }
+    if (seen.has(email)) {
+      results.push({ email, status: "invalid", reason: "Duplicate email." })
+      continue
+    }
+
+    seen.add(email)
+    clean.push(email)
+  }
+
+  return { clean, results }
 }
 
 async function glowCreditCount(admin: ReturnType<typeof createAdminClient>, email: string) {
@@ -60,6 +88,7 @@ async function responseForUser(userId: string, email: string) {
     emails: (mine ?? []).map((row) => row.referred_email as string),
     credits,
     glowUnlocked: credits >= MAX_REFERRALS,
+    results: [],
   })
 }
 
@@ -103,7 +132,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = (await request.json()) as { emails?: unknown }
-    const emails = cleanEmails(body.emails).filter((email) => email !== auth.email)
+    const parsed = parseEmails(body.emails, auth.email)
+    const emails = parsed.clean
 
     const { data: existingSignatures } = emails.length
       ? await admin
@@ -117,6 +147,13 @@ export async function PUT(request: NextRequest) {
       (existingSignatures ?? []).map((row) => String(row.author_email).toLowerCase())
     )
     const acceptedEmails = emails.filter((email) => allowedEmails.has(email))
+    const rejectedExistingChecks: ReferralResult[] = emails
+      .filter((email) => !allowedEmails.has(email))
+      .map((email) => ({
+        email,
+        status: "invalid",
+        reason: "This person needs to add a signature first.",
+      }))
 
     await admin.from("vote_signature_referrals").delete().eq("referrer_user_id", auth.user.id)
 
@@ -131,7 +168,17 @@ export async function PUT(request: NextRequest) {
       if (error) throw error
     }
 
-    return responseForUser(auth.user.id, auth.email)
+    const response = await responseForUser(auth.user.id, auth.email)
+    const payload = await response.json()
+
+    return NextResponse.json({
+      ...payload,
+      results: [
+        ...acceptedEmails.map((email) => ({ email, status: "accepted" })),
+        ...parsed.results,
+        ...rejectedExistingChecks,
+      ],
+    })
   } catch (err) {
     console.error("vote-signatures referrals put error:", err)
     return NextResponse.json(

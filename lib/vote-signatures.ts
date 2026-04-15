@@ -208,6 +208,11 @@ export type ReferralState = {
   emails: string[]
   credits: number
   glowUnlocked: boolean
+  results: {
+    email: string
+    status: "accepted" | "invalid"
+    reason?: string
+  }[]
 }
 
 export async function getReferralState(): Promise<ReferralState> {
@@ -217,6 +222,7 @@ export async function getReferralState(): Promise<ReferralState> {
     emails?: string[]
     credits?: number
     glowUnlocked?: boolean
+    results?: ReferralState["results"]
     error?: string
   }
 
@@ -228,6 +234,7 @@ export async function getReferralState(): Promise<ReferralState> {
     emails: result.emails ?? [],
     credits: result.credits ?? 0,
     glowUnlocked: result.glowUnlocked ?? false,
+    results: result.results ?? [],
   }
 }
 
@@ -242,6 +249,7 @@ export async function saveReferralList(emails: string[]): Promise<ReferralState>
     emails?: string[]
     credits?: number
     glowUnlocked?: boolean
+    results?: ReferralState["results"]
     error?: string
   }
 
@@ -253,5 +261,6 @@ export async function saveReferralList(emails: string[]): Promise<ReferralState>
     emails: result.emails ?? [],
     credits: result.credits ?? 0,
     glowUnlocked: result.glowUnlocked ?? false,
+    results: result.results ?? [],
   }
 }

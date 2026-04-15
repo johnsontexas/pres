@@ -86,6 +86,7 @@ export function SignYourVote() {
     emails: [],
     credits: 0,
     glowUnlocked: false,
+    results: [],
   })
   const [referralEmails, setReferralEmails] = useState(["", "", "", "", ""])
 
@@ -419,7 +420,9 @@ export function SignYourVote() {
         ...state.emails,
         ...Array(Math.max(0, 5 - state.emails.length)).fill(""),
       ].slice(0, 5))
-      setMessage("Friend list saved.")
+      const accepted = state.results.filter((result) => result.status === "accepted").length
+      const invalid = state.results.filter((result) => result.status === "invalid").length
+      setMessage(`Friend list saved. ${accepted} valid, ${invalid} invalid.`)
       if (!state.glowUnlocked && draftPlacement.glowEnabled) {
         updateDraft({ glowEnabled: false })
       }
@@ -433,14 +436,12 @@ export function SignYourVote() {
   const shareSignature = async () => {
     if (!user) return
     const url = `${window.location.origin}/#sign-vote`
-    const text = `Vote Daniel Johnson for House Council President and add your signature. Add ${user.email} to your friend list there: ${url}`
+    const text = `Vote Daniel Johnson for House Council President.\nAdd your signature and put my email (${user.email}) on your friend list to help me unlock glow colors:\n${url}`
 
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Vote Daniel Johnson",
           text,
-          url,
         })
       } else {
         await navigator.clipboard.writeText(text)
@@ -748,23 +749,34 @@ export function SignYourVote() {
 
               {message && <p className="text-sm font-medium text-primary">{message}</p>}
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-              <div className="rounded-lg border border-border bg-background p-4">
+              <div className="rounded-lg border-2 border-accent/45 bg-accent/10 p-5 shadow-sm">
                 <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
                   <div>
-                    <h4 className="font-semibold text-foreground">Friend list</h4>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Add up to 5 friends by email. They must already have a signature, and you
-                      cannot add yourself.
+                    <p className="text-xs font-semibold uppercase tracking-wide text-accent-foreground">
+                      Unlock glow colors
+                    </p>
+                    <h4 className="mt-1 text-xl font-bold text-foreground">
+                      Friend list challenge: {referralState.credits}/5
+                    </h4>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Add up to 5 friends by email, then share your email so they add you back.
+                      Friends must already have a signature. You cannot add yourself.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={saveReferrals}
                     disabled={isSaving || !mine}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground disabled:opacity-60"
                   >
                     Save list
                   </button>
+                </div>
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-background">
+                  <div
+                    className="h-full rounded-full bg-accent transition-all"
+                    style={{ width: `${Math.min(referralState.credits, 5) * 20}%` }}
+                  />
                 </div>
                 <div className="mt-4 grid gap-2 md:grid-cols-2">
                   {referralEmails.map((email, index) => (
@@ -785,11 +797,31 @@ export function SignYourVote() {
                 <button
                   type="button"
                   onClick={shareSignature}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-accent/50 bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
                 >
                   <Share2 className="h-4 w-4" />
                   Share invite
                 </button>
+                {referralState.results.length > 0 && (
+                  <div className="mt-4 rounded-lg border border-border bg-background p-3">
+                    <p className="text-sm font-semibold text-foreground">Last save results</p>
+                    <div className="mt-2 space-y-1">
+                      {referralState.results.map((result) => (
+                        <p
+                          key={`${result.email}-${result.reason ?? result.status}`}
+                          className={
+                            result.status === "accepted"
+                              ? "text-sm text-primary"
+                              : "text-sm text-destructive"
+                          }
+                        >
+                          {result.email}:{" "}
+                          {result.status === "accepted" ? "valid" : result.reason ?? "invalid"}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
