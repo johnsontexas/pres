@@ -162,20 +162,23 @@ export async function updateSignaturePlacement(
   id: string,
   placement: Pick<VoteSignature, "x" | "y" | "width" | "rotation" | "color">
 ) {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("vote_signatures")
-    .update(placement)
-    .eq("id", id)
-    .select("*")
-    .single()
-
-  if (error || !data) {
-    console.error("Error updating signature placement", error)
-    throw error
+  const response = await fetch("/api/vote-signatures", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, placement }),
+  })
+  const result = (await response.json()) as {
+    ok: boolean
+    signature?: VoteSignatureRow
+    error?: string
   }
 
-  return mapFromDb(data as VoteSignatureRow)
+  if (!response.ok || !result.ok || !result.signature) {
+    console.error("Error updating signature placement", result.error)
+    throw new Error(result.error ?? "Error updating signature placement")
+  }
+
+  return mapFromDb(result.signature)
 }
 
 export async function moderateSignature(

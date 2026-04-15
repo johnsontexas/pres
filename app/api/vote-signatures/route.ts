@@ -21,9 +21,13 @@ async function getSignedInUser() {
 }
 
 async function isAdminEmail(email: string) {
-  if (ADMIN_EMAILS.includes(email)) return true
-
   const admin = createAdminClient()
+
+  if (ADMIN_EMAILS.includes(email)) {
+    await admin.from("admin_emails").upsert({ email }, { onConflict: "email" })
+    return true
+  }
+
   const { data } = await admin
     .from("admin_emails")
     .select("email")
@@ -31,6 +35,32 @@ async function isAdminEmail(email: string) {
     .maybeSingle()
 
   return Boolean(data)
+}
+
+function validPlacement(value: unknown): value is {
+  x: number
+  y: number
+  width: number
+  rotation: number
+  color: string
+} {
+  if (!value || typeof value !== "object") return false
+  const placement = value as Record<string, unknown>
+  return (
+    typeof placement.x === "number" &&
+    typeof placement.y === "number" &&
+    typeof placement.width === "number" &&
+    typeof placement.rotation === "number" &&
+    typeof placement.color === "string" &&
+    placement.x >= 0 &&
+    placement.x <= 1 &&
+    placement.y >= 0 &&
+    placement.y <= 1 &&
+    placement.width >= 0.08 &&
+    placement.width <= 0.28 &&
+    placement.rotation >= -12 &&
+    placement.rotation <= 12
+  )
 }
 
 export async function POST(request: NextRequest) {
@@ -88,12 +118,66 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) throw error
+    if (userIsAdmin && data.status !== "approved") {
+      throw new Error("Admin signature was saved but the database trigger kept it pending. Run the updated signature SQL.")
+    }
 
     return NextResponse.json({ ok: true, signature: data })
   } catch (err) {
     console.error("vote-signatures save error:", err)
     return NextResponse.json(
       { ok: false, error: err instanceof Error ? err.message : "Could not save signature" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const auth = await getSignedInUser()
+    if ("error" in auth) {
+      return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status })
+    }
+
+    const body = (await request.json()) as {
+      id?: string
+      placement?: unknown
+    }
+
+    if (!body.id || !validPlacement(body.placement)) {
+      return NextResponse.json({ ok: false, error: "Invalid placement" }, { status: 400 })
+    }
+
+    const admin = createAdminClient()
+    const userIsAdmin = await isAdminEmail(auth.email)
+    const { data: existing, error: existingError } = await admin
+      .from("vote_signatures")
+      .select("id, user_id")
+      .eq("id", body.id)
+      .maybeSingle()
+
+    if (existingError) throw existingError
+    if (!existing) {
+      return NextResponse.json({ ok: false, error: "Signature not found" }, { status: 404 })
+    }
+    if (!userIsAdmin && existing.user_id !== auth.user.id) {
+      return NextResponse.json({ ok: false, error: "Not allowed" }, { status: 403 })
+    }
+
+    const { data, error } = await admin
+      .from("vote_signatures")
+      .update(body.placement)
+      .eq("id", body.id)
+      .select("*")
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({ ok: true, signature: data })
+  } catch (err) {
+    console.error("vote-signatures placement error:", err)
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : "Could not save placement" },
       { status: 500 }
     )
   }

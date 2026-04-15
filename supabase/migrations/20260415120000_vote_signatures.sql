@@ -103,7 +103,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF is_admin() THEN
+  IF is_admin() OR auth.role() = 'service_role' OR current_setting('role', true) = 'service_role' THEN
     RETURN NEW;
   END IF;
 

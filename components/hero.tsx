@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Cross } from "lucide-react"
+import { HeroSignatures } from "@/components/hero-signatures"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
 
 const JOIN_CAMPAIGN_FORM_URL =
@@ -10,15 +11,16 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden bg-primary">
       <div
-        className="pointer-events-none absolute inset-0 opacity-40"
+        className="pointer-events-none absolute inset-0 z-0 opacity-40"
         aria-hidden
         style={{
           background:
             "radial-gradient(ellipse 80% 60% at 20% 20%, oklch(0.55 0.12 145 / 0.35), transparent 55%)",
         }}
       />
+      <HeroSignatures />
 
-      <div className="relative mx-auto flex max-w-6xl flex-col items-center gap-10 px-6 py-20 md:flex-row md:items-center md:gap-12 md:py-28 lg:px-8">
+      <div className="relative z-20 mx-auto flex max-w-6xl flex-col items-center gap-10 px-6 py-20 md:flex-row md:items-center md:gap-12 md:py-28 lg:px-8">
         <div className="flex flex-1 flex-col items-center text-center md:items-start md:text-left">
           <span className="mb-3 inline-block max-w-md rounded-lg border border-primary-foreground/25 bg-primary-foreground/5 px-4 py-2 text-xs font-medium tracking-wide text-primary-foreground/90 md:text-sm">
             Running for <span className="text-accent">House Council President</span>
@@ -72,7 +74,7 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0">
+      <div className="absolute bottom-0 left-0 right-0 z-30">
         <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
           <path
             d="M0 60L48 55C96 50 192 40 288 35C384 30 480 30 576 33.3C672 36.7 768 43.3 864 45C960 46.7 1056 43.3 1152 40C1248 36.7 1344 33.3 1392 31.7L1440 30V60H1392C1344 60 1248 60 1152 60C1056 60 960 60 864 60C768 60 672 60 576 60C480 60 384 60 288 60C192 60 96 60 48 60H0Z"

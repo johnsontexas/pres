@@ -19,6 +19,8 @@ async function requireAdmin() {
 
   const email = user.email.toLowerCase()
   if (ADMIN_EMAILS.includes(email)) {
+    const admin = createAdminClient()
+    await admin.from("admin_emails").upsert({ email }, { onConflict: "email" })
     return { user, email }
   }
 
@@ -121,6 +123,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) throw error
+    if (data.status !== "approved") {
+      throw new Error("Admin signature was saved but the database trigger kept it pending. Run the updated signature SQL.")
+    }
 
     return NextResponse.json({ ok: true, signature: data })
   } catch (err) {
@@ -152,7 +157,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { error } = await admin
+    const { data, error } = await admin
       .from("vote_signatures")
       .update({
         status: body.status,
@@ -160,8 +165,13 @@ export async function PATCH(request: NextRequest) {
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", body.id)
+      .select("status")
+      .single()
 
     if (error) throw error
+    if (data.status !== body.status) {
+      throw new Error("The database trigger blocked this approval change. Run the updated signature SQL.")
+    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

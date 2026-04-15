@@ -6,6 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Check, Lock, PenLine, Upload, X } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   getAllSignaturesForAdmin,
   getApprovedSignatures,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/vote-signatures"
 import type { VoteSignature } from "@/lib/vote-signatures"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
+import { getSignatureZones, normalizeSignaturePlacement } from "@/lib/signature-layout"
 
 const SIGNATURE_COLORS = ["#1B5E20", "#111827", "#0F766E", "#B91C1C", "#7C2D12"]
 const DEFAULT_PLACEMENT = {
@@ -27,77 +29,13 @@ const DEFAULT_PLACEMENT = {
   color: SIGNATURE_COLORS[0],
 }
 
-const BLOCKED_ZONES = [
-  { x1: 0.06, y1: 0.18, x2: 0.45, y2: 0.29 },
-  { x1: 0.06, y1: 0.31, x2: 0.57, y2: 0.59 },
-  { x1: 0.06, y1: 0.63, x2: 0.62, y2: 0.77 },
-  { x1: 0.62, y1: 0.14, x2: 0.96, y2: 0.9 },
-]
-
 type CaptureMode = "draw" | "upload"
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-function signatureRect(placement: Pick<VoteSignature, "x" | "y" | "width">) {
-  const height = placement.width / 3
-  return {
-    x1: placement.x - placement.width / 2,
-    x2: placement.x + placement.width / 2,
-    y1: placement.y - height / 2,
-    y2: placement.y + height / 2,
-  }
-}
-
-function overlaps(
-  a: { x1: number; y1: number; x2: number; y2: number },
-  b: { x1: number; y1: number; x2: number; y2: number }
-) {
-  return a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1
-}
-
-function normalizePlacement<T extends Pick<VoteSignature, "x" | "y" | "width">>(
-  placement: T
-): T {
-  const height = placement.width / 3
-  let next = {
-    ...placement,
-    x: clamp(placement.x, placement.width / 2 + 0.02, 1 - placement.width / 2 - 0.02),
-    y: clamp(placement.y, height / 2 + 0.03, 1 - height / 2 - 0.04),
-  }
-
-  for (const zone of BLOCKED_ZONES) {
-    const rect = signatureRect(next)
-    if (!overlaps(rect, zone)) continue
-
-    const candidates = [
-      { ...next, x: zone.x1 - next.width / 2 - 0.018 },
-      { ...next, x: zone.x2 + next.width / 2 + 0.018 },
-      { ...next, y: zone.y1 - height / 2 - 0.018 },
-      { ...next, y: zone.y2 + height / 2 + 0.018 },
-    ].map((candidate) => ({
-      ...candidate,
-      x: clamp(candidate.x, next.width / 2 + 0.02, 1 - next.width / 2 - 0.02),
-      y: clamp(candidate.y, height / 2 + 0.03, 1 - height / 2 - 0.04),
-    }))
-
-    const validCandidates = candidates.filter((candidate) =>
-      BLOCKED_ZONES.every((blockedZone) => !overlaps(signatureRect(candidate), blockedZone))
-    )
-
-    const choices = validCandidates.length > 0 ? validCandidates : candidates
-    next = choices.reduce((closest, candidate) => {
-      const closestDistance = Math.hypot(closest.x - placement.x, closest.y - placement.y)
-      const candidateDistance = Math.hypot(candidate.x - placement.x, candidate.y - placement.y)
-      return candidateDistance < closestDistance ? candidate : closest
-    }, choices[0])
-  }
-
-  return next
-}
-
-function signatureStyle(signature: VoteSignature, isMine: boolean): CSSProperties {
+function signatureStyle(signature: VoteSignature, canDrag: boolean): CSSProperties {
   return {
     left: `${signature.x * 100}%`,
     top: `${signature.y * 100}%`,
@@ -114,7 +52,7 @@ function signatureStyle(signature: VoteSignature, isMine: boolean): CSSPropertie
     WebkitMaskPosition: "center",
     opacity: signature.status === "approved" ? 0.92 : 0.55,
     transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
-    cursor: isMine ? "grab" : "default",
+    cursor: canDrag ? "grab" : "default",
   }
 }
 
@@ -160,10 +98,12 @@ async function fileToSignatureBlob(file: File, color: string) {
 
 export function SignYourVote() {
   const { user, isLoading, signInWithGoogle } = useAuth()
+  const isMobile = useIsMobile()
+  const signatureZones = useMemo(() => getSignatureZones(isMobile), [isMobile])
   const boardRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const drawingRef = useRef(false)
-  const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null)
+  const dragRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null)
   const placementRef = useRef(DEFAULT_PLACEMENT)
 
   const [approved, setApproved] = useState<VoteSignature[]>([])
@@ -177,6 +117,12 @@ export function SignYourVote() {
   const [error, setError] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [draftPlacement, setDraftPlacement] = useState(DEFAULT_PLACEMENT)
+
+  const normalizePlacement = useCallback(
+    <T extends Pick<VoteSignature, "x" | "y" | "width">>(placement: T) =>
+      normalizeSignaturePlacement(placement, signatureZones),
+    [signatureZones]
+  )
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true)
@@ -204,7 +150,7 @@ export function SignYourVote() {
 
     setApproved(visibleApproved)
     setMine(currentUserSignature)
-    setAdminSignatures(adminRows.filter((signature) => signature.id !== currentUserSignature?.id))
+    setAdminSignatures(adminRows)
     if (currentUserSignature) {
       const nextPlacement = normalizePlacement({
         x: currentUserSignature.x,
@@ -218,7 +164,7 @@ export function SignYourVote() {
       setSelectedColor(currentUserSignature.color)
     }
     setIsRefreshing(false)
-  }, [user])
+  }, [normalizePlacement, user])
 
   useEffect(() => {
     void refresh()
@@ -243,11 +189,36 @@ export function SignYourVote() {
   }, [captureMode, isCaptureOpen, selectedColor])
 
   const displayedSignatures = useMemo(() => {
+    if (user?.isAdmin) {
+      return adminSignatures.filter((signature) => signature.status !== "rejected")
+    }
+
     const withoutMine = approved.filter((signature) => signature.userId !== mine?.userId)
     return mine ? [...withoutMine, mine] : withoutMine
-  }, [approved, mine])
+  }, [adminSignatures, approved, mine, user?.isAdmin])
 
   const pendingSignatures = adminSignatures.filter((signature) => signature.status === "pending")
+
+  const updateSignatureState = (signature: VoteSignature) => {
+    setMine((current) => (current?.id === signature.id ? signature : current))
+    setApproved((current) =>
+      signature.status === "approved"
+        ? [
+            ...current.filter((item) => item.id !== signature.id),
+            signature,
+          ]
+        : current.filter((item) => item.id !== signature.id)
+    )
+    setAdminSignatures((current) =>
+      current.some((item) => item.id === signature.id)
+        ? current.map((item) => (item.id === signature.id ? signature : item))
+        : [...current, signature]
+    )
+  }
+
+  const canMoveSignature = (signature: VoteSignature) => {
+    return Boolean(user?.isAdmin || signature.id === mine?.id)
+  }
 
   const canvasPoint = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
@@ -312,6 +283,7 @@ export function SignYourVote() {
       )
       setIsCaptureOpen(false)
       await refresh()
+      window.dispatchEvent(new Event("vote-signatures-changed"))
     } catch (err) {
       setError(
         err instanceof Error
@@ -343,11 +315,12 @@ export function SignYourVote() {
   }
 
   const beginDrag = (event: ReactPointerEvent<HTMLDivElement>, signature: VoteSignature) => {
-    if (!mine || signature.id !== mine.id) return
+    if (!canMoveSignature(signature)) return
     const board = boardRef.current
     if (!board) return
     const rect = board.getBoundingClientRect()
     dragRef.current = {
+      id: signature.id,
       offsetX: event.clientX - rect.left - signature.x * rect.width,
       offsetY: event.clientY - rect.top - signature.y * rect.height,
     }
@@ -355,27 +328,30 @@ export function SignYourVote() {
   }
 
   const dragSignature = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!dragRef.current || !mine) return
+    if (!dragRef.current) return
     const board = boardRef.current
     if (!board) return
+    const signature = displayedSignatures.find((item) => item.id === dragRef.current?.id)
+    if (!signature) return
     const rect = board.getBoundingClientRect()
     const x = (event.clientX - rect.left - dragRef.current.offsetX) / rect.width
     const y = (event.clientY - rect.top - dragRef.current.offsetY) / rect.height
     const next = normalizePlacement({
-      ...mine,
+      ...signature,
       x,
       y,
     })
     const nextPlacement = { ...placementRef.current, x: next.x, y: next.y }
     placementRef.current = nextPlacement
-    setMine(next)
-    setDraftPlacement(nextPlacement)
+    updateSignatureState(next)
+    if (next.id === mine?.id) setDraftPlacement(nextPlacement)
   }
 
   const endDrag = async () => {
-    if (!dragRef.current || !mine) return
+    if (!dragRef.current) return
+    const signature = displayedSignatures.find((item) => item.id === dragRef.current?.id)
     dragRef.current = null
-    await savePlacement(mine)
+    if (signature) await savePlacement(signature)
   }
 
   const savePlacement = async (signature = mine) => {
@@ -384,17 +360,26 @@ export function SignYourVote() {
     setError("")
     try {
       const updated = await updateSignaturePlacement(signature.id, {
-        x: placementRef.current.x,
-        y: placementRef.current.y,
-        width: placementRef.current.width,
-        rotation: placementRef.current.rotation,
-        color: placementRef.current.color,
+        x: signature.id === mine?.id ? placementRef.current.x : signature.x,
+        y: signature.id === mine?.id ? placementRef.current.y : signature.y,
+        width: signature.id === mine?.id ? placementRef.current.width : signature.width,
+        rotation: signature.id === mine?.id ? placementRef.current.rotation : signature.rotation,
+        color: signature.id === mine?.id ? placementRef.current.color : signature.color,
       })
-      setMine(updated)
-      setMessage("Your signature position is saved.")
+      updateSignatureState(updated)
+      setMessage(
+        signature.id === mine?.id
+          ? "Your signature position is saved."
+          : `${signature.authorName}'s signature position is saved.`
+      )
       await refresh()
-    } catch {
-      setError("Could not save the placement.")
+      window.dispatchEvent(new Event("vote-signatures-changed"))
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `Could not save the placement: ${err.message}`
+          : "Could not save the placement."
+      )
     } finally {
       setIsSaving(false)
     }
@@ -417,9 +402,14 @@ export function SignYourVote() {
     try {
       await moderateSignature(signature.id, status)
       await refresh()
+      window.dispatchEvent(new Event("vote-signatures-changed"))
       setMessage(status === "approved" ? "Signature approved." : "Signature rejected.")
-    } catch {
-      setError("Could not update that signature. Please try again.")
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `Could not update that signature: ${err.message}`
+          : "Could not update that signature. Please try again."
+      )
     } finally {
       setIsSaving(false)
     }
@@ -441,39 +431,39 @@ export function SignYourVote() {
           </p>
         </div>
 
-        <div className="mt-8 overflow-x-auto pb-2">
+        <div className="mt-8 pb-2">
           <div
             ref={boardRef}
-            className="relative mx-auto aspect-[1000/560] min-w-[720px] max-w-[1000px] overflow-hidden rounded-lg border border-primary/30 bg-primary shadow-sm"
+            className="relative mx-auto aspect-[390/760] w-full max-w-[430px] overflow-hidden rounded-lg border border-primary/30 bg-primary shadow-sm md:aspect-[1000/560] md:max-w-[1000px]"
             style={{
               background:
                 "radial-gradient(ellipse 80% 60% at 20% 20%, oklch(0.55 0.12 145 / 0.35), transparent 55%), oklch(0.32 0.12 145)",
             }}
             aria-label="Hero signature placement preview"
           >
-            <div className="absolute left-[6%] top-[18%] max-w-[39%] rounded-lg border border-primary-foreground/25 bg-primary-foreground/5 px-4 py-2 text-xs font-medium tracking-wide text-primary-foreground/90">
+            <div className="absolute left-[18%] top-[8%] max-w-[64%] rounded-lg border border-primary-foreground/25 bg-primary-foreground/5 px-3 py-1.5 text-center text-[10px] font-medium tracking-wide text-primary-foreground/90 md:left-[6%] md:top-[18%] md:max-w-[39%] md:px-4 md:py-2 md:text-left md:text-xs">
               Running for <span className="text-accent">House Council President</span>
             </div>
-            <div className="absolute left-[6%] top-[32%] max-w-[50%]">
-              <div className="font-display text-5xl font-bold leading-[1.08] tracking-tight text-primary-foreground">
+            <div className="absolute left-[10%] top-[18%] max-w-[80%] text-center md:left-[6%] md:top-[32%] md:max-w-[50%] md:text-left">
+              <div className="font-display text-4xl font-bold leading-[1.08] tracking-tight text-primary-foreground md:text-5xl">
                 Vote <span className="text-accent">Daniel Johnson</span>
               </div>
-              <p className="mt-4 max-w-[92%] font-serif text-lg font-semibold leading-relaxed text-primary-foreground/95">
+              <p className="mx-auto mt-3 max-w-[92%] font-serif text-sm font-semibold leading-relaxed text-primary-foreground/95 md:mx-0 md:mt-4 md:text-lg">
                 {CAMPAIGN_SLOGAN}
               </p>
             </div>
-            <div className="absolute left-[6%] top-[64%] flex max-w-[56%] flex-wrap gap-3">
-              <div className="rounded-lg bg-primary-foreground px-5 py-2.5 text-xs font-semibold text-primary shadow-sm">
+            <div className="absolute left-[12%] top-[39%] flex max-w-[76%] flex-wrap justify-center gap-2 md:left-[6%] md:top-[64%] md:max-w-[56%] md:justify-start md:gap-3">
+              <div className="rounded-lg bg-primary-foreground px-3 py-2 text-[10px] font-semibold text-primary shadow-sm md:px-5 md:py-2.5 md:text-xs">
                 See my platform
               </div>
-              <div className="rounded-lg border border-primary-foreground/35 bg-primary-foreground/5 px-5 py-2.5 text-xs font-semibold text-primary-foreground">
+              <div className="rounded-lg border border-primary-foreground/35 bg-primary-foreground/5 px-3 py-2 text-[10px] font-semibold text-primary-foreground md:px-5 md:py-2.5 md:text-xs">
                 Ask me a question
               </div>
-              <div className="rounded-lg border border-accent/50 bg-accent/15 px-5 py-2.5 text-xs font-semibold text-primary-foreground">
+              <div className="rounded-lg border border-accent/50 bg-accent/15 px-3 py-2 text-[10px] font-semibold text-primary-foreground md:px-5 md:py-2.5 md:text-xs">
                 Join the campaign
               </div>
             </div>
-            <div className="absolute bottom-[9%] right-[7%] w-[29%]">
+            <div className="absolute bottom-[9%] left-[28%] w-[48%] md:left-auto md:right-[7%] md:w-[29%]">
               <Image
                 src="/images/candidate.png"
                 alt="Daniel Johnson"
@@ -485,14 +475,21 @@ export function SignYourVote() {
             </div>
             {displayedSignatures.map((signature) => {
               const isMine = signature.id === mine?.id
+              const canDrag = canMoveSignature(signature)
               return (
                 <div
                   key={signature.id}
                   className={`absolute touch-none transition-opacity ${
-                    isMine ? "outline outline-2 outline-offset-4 outline-primary/25" : ""
+                    isMine || signature.status === "pending"
+                      ? "outline outline-2 outline-offset-4 outline-primary-foreground/35"
+                      : ""
                   }`}
-                  style={signatureStyle(signature, isMine)}
-                  title={signature.authorName}
+                  style={signatureStyle(signature, canDrag)}
+                  title={
+                    signature.status === "pending"
+                      ? `${signature.authorName} - pending approval`
+                      : signature.authorName
+                  }
                   onPointerDown={(event) => beginDrag(event, signature)}
                   onPointerMove={dragSignature}
                   onPointerUp={endDrag}
