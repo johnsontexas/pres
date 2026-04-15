@@ -25,6 +25,7 @@ function signatureStyle(signature: VoteSignature): CSSProperties {
     WebkitMaskPosition: "center",
     opacity: signature.status === "approved" ? 0.82 : 0.42,
     transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
+    filter: signature.glowEnabled ? `drop-shadow(0 0 10px ${signature.color}) drop-shadow(0 0 18px ${signature.color})` : undefined,
   }
 }
 

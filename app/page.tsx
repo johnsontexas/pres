@@ -12,8 +12,8 @@ export default function CampaignPage() {
     <main>
       <Hero />
       <Countdown />
-      <SignYourVote />
       <Platform />
+      <SignYourVote />
       <Quote />
       <Contact />
       <div id="vote">

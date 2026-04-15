@@ -4,35 +4,33 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Check, Lock, PenLine, Upload, X } from "lucide-react"
+import { Check, Lock, PenLine, Share2, X } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
   getAllSignaturesForAdmin,
   getApprovedSignatures,
   getMySignature,
+  getReferralState,
   moderateSignature,
+  saveReferralList,
   saveSignatureImage,
   updateSignaturePlacement,
   uploadSignaturePng,
 } from "@/lib/vote-signatures"
+import type { ReferralState } from "@/lib/vote-signatures"
 import type { VoteSignature } from "@/lib/vote-signatures"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
 import { getSignatureZones, normalizeSignaturePlacement } from "@/lib/signature-layout"
 
-const SIGNATURE_COLORS = ["#1B5E20", "#111827", "#0F766E", "#B91C1C", "#7C2D12"]
+const SIGNATURE_COLORS = ["#111827", "#FFFFFF", "#1B5E20", "#B91C1C", "#FACC15"]
 const DEFAULT_PLACEMENT = {
   x: 0.18,
   y: 0.82,
   width: 0.18,
   rotation: 0,
   color: SIGNATURE_COLORS[0],
-}
-
-type CaptureMode = "draw" | "upload"
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value))
+  glowEnabled: false,
 }
 
 function signatureStyle(signature: VoteSignature, canDrag: boolean): CSSProperties {
@@ -52,6 +50,7 @@ function signatureStyle(signature: VoteSignature, canDrag: boolean): CSSProperti
     WebkitMaskPosition: "center",
     opacity: signature.status === "approved" ? 0.92 : 0.55,
     transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
+    filter: signature.glowEnabled ? `drop-shadow(0 0 10px ${signature.color}) drop-shadow(0 0 18px ${signature.color})` : undefined,
     cursor: canDrag ? "grab" : "default",
   }
 }
@@ -60,40 +59,6 @@ async function blobFromCanvas(canvas: HTMLCanvasElement) {
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"))
   if (!blob) throw new Error("Could not create signature PNG.")
   return blob
-}
-
-async function fileToSignatureBlob(file: File, color: string) {
-  const bitmap = await createImageBitmap(file)
-  const canvas = document.createElement("canvas")
-  canvas.width = 640
-  canvas.height = 240
-  const ctx = canvas.getContext("2d", { willReadFrequently: true })
-  if (!ctx) throw new Error("Could not prepare uploaded signature.")
-
-  const scale = Math.min(canvas.width / bitmap.width, canvas.height / bitmap.height)
-  const width = bitmap.width * scale
-  const height = bitmap.height * scale
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.drawImage(bitmap, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height)
-
-  const image = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const rgb = color.match(/\w\w/g)?.map((part) => parseInt(part, 16)) ?? [27, 94, 32]
-
-  for (let i = 0; i < image.data.length; i += 4) {
-    const r = image.data[i]
-    const g = image.data[i + 1]
-    const b = image.data[i + 2]
-    const sourceAlpha = image.data[i + 3] / 255
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    const inkAlpha = clamp((1 - luminance) * 2.2 * sourceAlpha, 0, 1)
-    image.data[i] = rgb[0]
-    image.data[i + 1] = rgb[1]
-    image.data[i + 2] = rgb[2]
-    image.data[i + 3] = Math.round(inkAlpha * 255)
-  }
-
-  ctx.putImageData(image, 0, 0)
-  return blobFromCanvas(canvas)
 }
 
 export function SignYourVote() {
@@ -110,13 +75,19 @@ export function SignYourVote() {
   const [mine, setMine] = useState<VoteSignature | null>(null)
   const [adminSignatures, setAdminSignatures] = useState<VoteSignature[]>([])
   const [isRefreshing, setIsRefreshing] = useState(true)
+  const [isPlacementOpen, setIsPlacementOpen] = useState(false)
   const [isCaptureOpen, setIsCaptureOpen] = useState(false)
-  const [captureMode, setCaptureMode] = useState<CaptureMode>("draw")
   const [selectedColor, setSelectedColor] = useState(SIGNATURE_COLORS[0])
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [draftPlacement, setDraftPlacement] = useState(DEFAULT_PLACEMENT)
+  const [referralState, setReferralState] = useState<ReferralState>({
+    emails: [],
+    credits: 0,
+    glowUnlocked: false,
+  })
+  const [referralEmails, setReferralEmails] = useState(["", "", "", "", ""])
 
   const normalizePlacement = useCallback(
     <T extends Pick<VoteSignature, "x" | "y" | "width">>(placement: T) =>
@@ -158,6 +129,7 @@ export function SignYourVote() {
         width: currentUserSignature.width,
         rotation: currentUserSignature.rotation,
         color: currentUserSignature.color,
+        glowEnabled: currentUserSignature.glowEnabled,
       })
       placementRef.current = nextPlacement
       setDraftPlacement(nextPlacement)
@@ -171,7 +143,7 @@ export function SignYourVote() {
   }, [refresh])
 
   useEffect(() => {
-    if (!isCaptureOpen || captureMode !== "draw") return
+    if (!isCaptureOpen) return
     const canvas = canvasRef.current
     const context = canvas?.getContext("2d")
     if (!canvas || !context) return
@@ -186,18 +158,49 @@ export function SignYourVote() {
     context.lineWidth = 4
     context.strokeStyle = selectedColor
     context.clearRect(0, 0, rect.width, rect.height)
-  }, [captureMode, isCaptureOpen, selectedColor])
+  }, [isCaptureOpen, selectedColor])
+
+  useEffect(() => {
+    if (!user) return
+
+    getReferralState()
+      .then((state) => {
+        setReferralState(state)
+        setReferralEmails([
+          ...state.emails,
+          ...Array(Math.max(0, 5 - state.emails.length)).fill(""),
+        ].slice(0, 5))
+      })
+      .catch(() => {})
+  }, [user])
 
   const displayedSignatures = useMemo(() => {
+    const normalizeRows = (rows: VoteSignature[]) =>
+      rows.map((signature) => normalizePlacement(signature))
+
     if (user?.isAdmin) {
-      return adminSignatures.filter((signature) => signature.status !== "rejected")
+      return normalizeRows(adminSignatures.filter((signature) => signature.status !== "rejected"))
     }
 
     const withoutMine = approved.filter((signature) => signature.userId !== mine?.userId)
-    return mine ? [...withoutMine, mine] : withoutMine
-  }, [adminSignatures, approved, mine, user?.isAdmin])
+    return normalizeRows(mine ? [...withoutMine, mine] : withoutMine)
+  }, [adminSignatures, approved, mine, normalizePlacement, user?.isAdmin])
 
   const pendingSignatures = adminSignatures.filter((signature) => signature.status === "pending")
+  const statusLabel = mine
+    ? mine.status === "approved"
+      ? "Approved"
+      : mine.status === "pending"
+        ? "Pending"
+        : "Rejected"
+    : "Not signed"
+  const statusClass = mine
+    ? mine.status === "approved"
+      ? "border-primary/20 bg-primary/10 text-primary"
+      : mine.status === "pending"
+        ? "border-accent/30 bg-accent/10 text-accent-foreground"
+        : "border-destructive/25 bg-destructive/10 text-destructive"
+    : "border-border bg-muted text-muted-foreground"
 
   const updateSignatureState = (signature: VoteSignature) => {
     setMine((current) => (current?.id === signature.id ? signature : current))
@@ -301,19 +304,6 @@ export function SignYourVote() {
     await saveBlob(await blobFromCanvas(canvas))
   }
 
-  const saveUploadedSignature = async (file: File | null) => {
-    if (!file) return
-    if (!file.type.startsWith("image/")) {
-      setError("Upload an image file of your signature.")
-      return
-    }
-    try {
-      await saveBlob(await fileToSignatureBlob(file, selectedColor))
-    } catch {
-      setError("Could not read that image. A PNG or JPG works best.")
-    }
-  }
-
   const beginDrag = (event: ReactPointerEvent<HTMLDivElement>, signature: VoteSignature) => {
     if (!canMoveSignature(signature)) return
     const board = boardRef.current
@@ -365,6 +355,7 @@ export function SignYourVote() {
         width: signature.id === mine?.id ? placementRef.current.width : signature.width,
         rotation: signature.id === mine?.id ? placementRef.current.rotation : signature.rotation,
         color: signature.id === mine?.id ? placementRef.current.color : signature.color,
+        glowEnabled: signature.id === mine?.id ? placementRef.current.glowEnabled : signature.glowEnabled,
       })
       updateSignatureState(updated)
       setMessage(
@@ -387,6 +378,9 @@ export function SignYourVote() {
 
   const updateDraft = (next: Partial<typeof draftPlacement>) => {
     const merged = normalizePlacement({ ...placementRef.current, ...next })
+    if (next.glowEnabled && !referralState.glowUnlocked) {
+      merged.glowEnabled = false
+    }
     placementRef.current = merged
     setDraftPlacement(merged)
     setMine((current) => (current ? { ...current, ...merged } : current))
@@ -415,8 +409,51 @@ export function SignYourVote() {
     }
   }
 
+  const saveReferrals = async () => {
+    setIsSaving(true)
+    setError("")
+    try {
+      const state = await saveReferralList(referralEmails)
+      setReferralState(state)
+      setReferralEmails([
+        ...state.emails,
+        ...Array(Math.max(0, 5 - state.emails.length)).fill(""),
+      ].slice(0, 5))
+      setMessage("Friend list saved.")
+      if (!state.glowUnlocked && draftPlacement.glowEnabled) {
+        updateDraft({ glowEnabled: false })
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save friend list.")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const shareSignature = async () => {
+    if (!user) return
+    const url = `${window.location.origin}/#sign-vote`
+    const text = `Vote Daniel Johnson for House Council President and add your signature. Add ${user.email} to your friend list there: ${url}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Vote Daniel Johnson",
+          text,
+          url,
+        })
+      } else {
+        await navigator.clipboard.writeText(text)
+        setMessage("Share message copied.")
+      }
+    } catch {
+      await navigator.clipboard.writeText(text)
+      setMessage("Share message copied.")
+    }
+  }
+
   return (
-    <section className="bg-secondary/45 px-6 py-14">
+    <section id="sign-vote" className="bg-secondary/45 px-6 py-14">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col gap-4 text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">
@@ -431,7 +468,68 @@ export function SignYourVote() {
           </p>
         </div>
 
-        <div className="mt-8 pb-2">
+        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-start justify-between gap-4 rounded-lg border border-border bg-card p-5 shadow-sm md:flex-row md:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h3 className="font-semibold text-foreground">Your signature</h3>
+              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClass}`}>
+                {statusLabel}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Open the signature UI to write, place, share, or check approval.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {isLoading ? (
+              <button
+                type="button"
+                disabled
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-muted-foreground"
+              >
+                Loading...
+              </button>
+            ) : !user ? (
+              <button
+                type="button"
+                onClick={() => signInWithGoogle("/#sign-vote")}
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Sign in to sign
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsPlacementOpen(true)}
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Open signature UI
+              </button>
+            )}
+          </div>
+        </div>
+
+        {isPlacementOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/45 px-4 py-6">
+            <div className="mx-auto w-full max-w-6xl rounded-lg border border-border bg-background p-4 shadow-xl md:p-6">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Signature UI</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Place your signature around the hero without covering the text, buttons, or photo.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPlacementOpen(false)}
+                  className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground"
+                  aria-label="Close signature UI"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="pb-2">
           <div
             ref={boardRef}
             className="relative mx-auto aspect-[390/760] w-full max-w-[430px] overflow-hidden rounded-lg border border-primary/30 bg-primary shadow-sm md:aspect-[1000/560] md:max-w-[1000px]"
@@ -538,14 +636,13 @@ export function SignYourVote() {
                         : mine.status === "pending"
                           ? "Waiting for admin approval. You can still place it now."
                           : "Rejected. Write or upload a new signature for approval."
-                      : "Draw with your screen or mouse, or upload an image."}
+                      : "Draw with your screen or mouse."}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => {
-                      setCaptureMode("draw")
                       setIsCaptureOpen(true)
                     }}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
@@ -555,14 +652,11 @@ export function SignYourVote() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setCaptureMode("upload")
-                      setIsCaptureOpen(true)
-                    }}
+                    onClick={shareSignature}
                     className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                   >
-                    <Upload className="h-4 w-4" />
-                    Upload signature
+                    <Share2 className="h-4 w-4" />
+                    Share
                   </button>
                 </div>
               </div>
@@ -570,6 +664,11 @@ export function SignYourVote() {
                 {user.isAdmin
                   ? "Admin signatures are approved automatically. Student signatures still need your approval before they appear for everyone."
                   : "Note: every new or replaced signature must be approved by an admin before it appears for everyone."}
+              </p>
+              <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                Placement may look a little different on desktop and mobile. If the screen size
+                would put a signature behind the text, buttons, or photo, it will automatically
+                move to the nearest open spot.
               </p>
 
               {mine && (
@@ -619,6 +718,22 @@ export function SignYourVote() {
                       </div>
                     </div>
                   </div>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3">
+                    <label className="flex items-center justify-between gap-3 text-sm font-medium text-foreground">
+                      Glow color
+                      <input
+                        type="checkbox"
+                        checked={draftPlacement.glowEnabled && referralState.glowUnlocked}
+                        disabled={!referralState.glowUnlocked}
+                        onChange={(event) => updateDraft({ glowEnabled: event.target.checked })}
+                        className="h-5 w-5 rounded border-input text-primary focus:ring-primary"
+                      />
+                    </label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {referralState.credits}/5 friends have added you. Unlock glow while 5 people
+                      keep you on their list.
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => savePlacement()}
@@ -633,6 +748,49 @@ export function SignYourVote() {
 
               {message && <p className="text-sm font-medium text-primary">{message}</p>}
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+              <div className="rounded-lg border border-border bg-background p-4">
+                <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                  <div>
+                    <h4 className="font-semibold text-foreground">Friend list</h4>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Add up to 5 friends by email. They must already have a signature, and you
+                      cannot add yourself.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={saveReferrals}
+                    disabled={isSaving || !mine}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                  >
+                    Save list
+                  </button>
+                </div>
+                <div className="mt-4 grid gap-2 md:grid-cols-2">
+                  {referralEmails.map((email, index) => (
+                    <input
+                      key={index}
+                      type="email"
+                      value={email}
+                      onChange={(event) => {
+                        const next = [...referralEmails]
+                        next[index] = event.target.value
+                        setReferralEmails(next)
+                      }}
+                      placeholder={`Friend ${index + 1} email`}
+                      className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={shareSignature}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share invite
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -700,6 +858,9 @@ export function SignYourVote() {
             </Link>
           </p>
         )}
+            </div>
+          </div>
+        )}
       </div>
 
       {isCaptureOpen && (
@@ -708,7 +869,7 @@ export function SignYourVote() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
-                  {captureMode === "draw" ? "Write your signature" : "Upload your signature"}
+                  Write your signature
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {user?.isAdmin
@@ -741,52 +902,32 @@ export function SignYourVote() {
               ))}
             </div>
 
-            {captureMode === "draw" ? (
-              <>
-                <canvas
-                  ref={canvasRef}
-                  className="mt-4 h-56 w-full touch-none rounded-lg border border-input bg-white"
-                  onPointerDown={startDrawing}
-                  onPointerMove={draw}
-                  onPointerUp={stopDrawing}
-                  onPointerCancel={stopDrawing}
-                  onPointerLeave={stopDrawing}
-                />
-                <div className="mt-4 flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={clearCanvas}
-                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                  >
-                    Clear
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveDrawnSignature}
-                    disabled={isSaving}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-                  >
-                    Save signature
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="mt-4 rounded-lg border border-dashed border-border p-8 text-center">
-                <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Choose a PNG or JPG. It will be converted into a clean PNG.
-                </p>
-                <label className="mt-4 inline-flex cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-                  Choose file
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    onChange={(event) => saveUploadedSignature(event.target.files?.[0] ?? null)}
-                  />
-                </label>
-              </div>
-            )}
+            <canvas
+              ref={canvasRef}
+              className="mt-4 h-56 w-full touch-none rounded-lg border border-input bg-white"
+              onPointerDown={startDrawing}
+              onPointerMove={draw}
+              onPointerUp={stopDrawing}
+              onPointerCancel={stopDrawing}
+              onPointerLeave={stopDrawing}
+            />
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={clearCanvas}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={saveDrawnSignature}
+                disabled={isSaving}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                Save signature
+              </button>
+            </div>
 
             {error && <p className="mt-3 text-sm font-medium text-destructive">{error}</p>}
           </div>

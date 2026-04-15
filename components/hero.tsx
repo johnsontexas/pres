@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Cross } from "lucide-react"
 import { HeroSignatures } from "@/components/hero-signatures"
+import { ShareCampaignButton } from "@/components/share-campaign-button"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
 
 const JOIN_CAMPAIGN_FORM_URL =
@@ -57,6 +58,7 @@ export function Hero() {
               <Cross className="h-4 w-4" />
               Join the campaign
             </a>
+            <ShareCampaignButton />
           </div>
         </div>
 

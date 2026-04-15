@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
         {
           user_id: adminCheck.user.id,
           author_name: body.authorName ?? "Admin",
+          author_email: adminCheck.email,
           image_path: body.imagePath,
           color: body.color,
           x: Number(existing?.x ?? 0.18),

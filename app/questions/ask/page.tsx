@@ -8,6 +8,8 @@ import { useAuth } from "@/components/auth-context"
 import { addQuestion } from "@/lib/questions"
 import { createClient } from "@/lib/supabase/client"
 
+const MAX_QUESTION_LENGTH = 300
+
 export default function AskPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
@@ -37,6 +39,10 @@ export default function AskPage() {
     }
     if (trimmed.length < 10) {
       setError("Your question is too short. Please be more specific.")
+      return
+    }
+    if (trimmed.length > MAX_QUESTION_LENGTH) {
+      setError(`Please keep your question under ${MAX_QUESTION_LENGTH} characters.`)
       return
     }
 
@@ -100,10 +106,14 @@ export default function AskPage() {
               setText(e.target.value)
               setError("")
             }}
+            maxLength={MAX_QUESTION_LENGTH}
             placeholder="What would you like to ask about my platform, ideas, or plans?"
             rows={5}
             className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
           />
+          <p className="mt-1 text-right text-xs text-muted-foreground">
+            {text.length}/{MAX_QUESTION_LENGTH}
+          </p>
           {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
 
           <div className="mt-4 flex items-start gap-2">

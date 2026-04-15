@@ -8,6 +8,7 @@ import type { User as SupabaseUser } from "@supabase/supabase-js"
 export type User = {
   id: string
   name: string
+  email: string
   isAdmin: boolean
 }
 
@@ -39,6 +40,7 @@ function mapSupabaseUser(sbUser: SupabaseUser | null): User | null {
   const email = (sbUser.email ?? "").toLowerCase()
   return {
     id: sbUser.id,
+    email,
     name:
       sbUser.user_metadata?.full_name ??
       sbUser.user_metadata?.name ??

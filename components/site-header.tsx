@@ -9,6 +9,7 @@ import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
 const navLinks = [
   { label: "About", href: "/about" },
   { label: "Platform", href: "/#platform" },
+  { label: "Sign Vote", href: "/#sign-vote" },
   { label: "News", href: "/news" },
   { label: "Q&A", href: "/questions" },
   { label: "Contact", href: "/#contact" },

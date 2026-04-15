@@ -9,6 +9,7 @@ export type VoteSignature = {
   imagePath: string
   imageUrl: string
   color: string
+  glowEnabled: boolean
   x: number
   y: number
   width: number
@@ -29,6 +30,7 @@ type VoteSignatureRow = {
   y: number | string
   width: number | string
   rotation: number | string
+  glow_enabled?: boolean | null
   status: SignatureStatus
   reviewed_at: string | null
   created_at: string
@@ -51,6 +53,7 @@ function mapFromDb(row: VoteSignatureRow): VoteSignature {
     imagePath: row.image_path,
     imageUrl: publicUrlForPath(row.image_path),
     color: row.color,
+    glowEnabled: row.glow_enabled ?? false,
     x: Number(row.x),
     y: Number(row.y),
     width: Number(row.width),
@@ -160,7 +163,7 @@ export async function saveSignatureImage(input: {
 
 export async function updateSignaturePlacement(
   id: string,
-  placement: Pick<VoteSignature, "x" | "y" | "width" | "rotation" | "color">
+  placement: Pick<VoteSignature, "x" | "y" | "width" | "rotation" | "color" | "glowEnabled">
 ) {
   const response = await fetch("/api/vote-signatures", {
     method: "PATCH",
@@ -198,5 +201,57 @@ export async function moderateSignature(
   if (!response.ok || !result.ok) {
     console.error("Error moderating signature", result.error)
     throw new Error(result.error ?? "Error moderating signature")
+  }
+}
+
+export type ReferralState = {
+  emails: string[]
+  credits: number
+  glowUnlocked: boolean
+}
+
+export async function getReferralState(): Promise<ReferralState> {
+  const response = await fetch("/api/vote-signatures/referrals")
+  const result = (await response.json()) as {
+    ok: boolean
+    emails?: string[]
+    credits?: number
+    glowUnlocked?: boolean
+    error?: string
+  }
+
+  if (!response.ok || !result.ok) {
+    throw new Error(result.error ?? "Could not load referrals")
+  }
+
+  return {
+    emails: result.emails ?? [],
+    credits: result.credits ?? 0,
+    glowUnlocked: result.glowUnlocked ?? false,
+  }
+}
+
+export async function saveReferralList(emails: string[]): Promise<ReferralState> {
+  const response = await fetch("/api/vote-signatures/referrals", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ emails }),
+  })
+  const result = (await response.json()) as {
+    ok: boolean
+    emails?: string[]
+    credits?: number
+    glowUnlocked?: boolean
+    error?: string
+  }
+
+  if (!response.ok || !result.ok) {
+    throw new Error(result.error ?? "Could not save referrals")
+  }
+
+  return {
+    emails: result.emails ?? [],
+    credits: result.credits ?? 0,
+    glowUnlocked: result.glowUnlocked ?? false,
   }
 }
