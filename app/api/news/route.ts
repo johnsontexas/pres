@@ -64,6 +64,28 @@ function cleanLinks(value: unknown) {
     .slice(0, 5)
 }
 
+async function uniqueSlug(admin: ReturnType<typeof createAdminClient>, baseSlug: string) {
+  const fallback = baseSlug || `news-${Date.now()}`
+  let nextSlug = fallback
+  let suffix = 2
+
+  while (suffix < 100) {
+    const { data, error } = await admin
+      .from("news_posts")
+      .select("id")
+      .eq("slug", nextSlug)
+      .maybeSingle()
+
+    if (error) throw error
+    if (!data) return nextSlug
+
+    nextSlug = `${fallback}-${suffix}`
+    suffix += 1
+  }
+
+  return `${fallback}-${Date.now()}`
+}
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireAdmin()
@@ -73,18 +95,29 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const admin = createAdminClient()
+    const title = String(body.title ?? "").trim()
+    const content = String(body.content ?? "").trim()
+
+    if (!title || !content) {
+      return NextResponse.json(
+        { ok: false, error: "Title and content are required." },
+        { status: 400 }
+      )
+    }
+
+    const slug = await uniqueSlug(admin, String(body.slug ?? "").trim())
     const { data, error } = await admin
       .from("news_posts")
       .insert({
-        title: String(body.title ?? "").trim(),
+        title,
         excerpt: String(body.excerpt ?? "").trim(),
-        content: String(body.content ?? "").trim(),
+        content,
         author: String(body.author ?? auth.user.user_metadata?.name ?? "Admin"),
         author_id: auth.user.id,
         published_at: String(body.publishedAt ?? new Date().toISOString()),
         is_published: Boolean(body.isPublished),
         image_url: body.imageUrl ? String(body.imageUrl).trim() : null,
-        slug: String(body.slug ?? "").trim(),
+        slug,
         links: cleanLinks(body.links),
       })
       .select("*")

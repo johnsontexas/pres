@@ -21,6 +21,7 @@ export default function NewPostPage() {
   ])
   const [isPublished, setIsPublished] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
 
   if (isLoading) {
     return (
@@ -40,22 +41,29 @@ export default function NewPostPage() {
     if (!title.trim() || !content.trim()) return
 
     setSaving(true)
+    setError("")
     const slug = generateSlug(title)
-    await createPost({
-      title: title.trim(),
-      excerpt: excerpt.trim(),
-      content: content.trim(),
-      author: user.name,
-      authorId: user.id,
-      publishedAt: new Date().toISOString(),
-      isPublished,
-      imageUrl: imageUrl.trim() || null,
-      slug,
-      links: links
-        .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
-        .filter((link) => link.label && link.url),
-    })
-    router.push("/news")
+    try {
+      const post = await createPost({
+        title: title.trim(),
+        excerpt: excerpt.trim(),
+        content: content.trim(),
+        author: user.name,
+        authorId: user.id,
+        publishedAt: new Date().toISOString(),
+        isPublished,
+        imageUrl: imageUrl.trim() || null,
+        slug,
+        links: links
+          .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+          .filter((link) => link.label && link.url),
+      })
+      router.push(post ? `/news/${post.slug}` : "/news")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save post.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -194,6 +202,7 @@ export default function NewPostPage() {
               Cancel
             </Link>
           </div>
+          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
         </form>
       </div>
     </div>

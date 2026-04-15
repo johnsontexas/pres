@@ -26,6 +26,7 @@ export default function EditPostPage() {
   const [isPublished, setIsPublished] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const loadPost = async () => {
@@ -80,19 +81,26 @@ export default function EditPostPage() {
     if (!title.trim() || !content.trim()) return
 
     setSaving(true)
+    setError("")
     const newSlug = title !== post.title ? generateSlug(title) : post.slug
-    await updatePost(post.id, {
-      title: title.trim(),
-      excerpt: excerpt.trim(),
-      content: content.trim(),
-      isPublished,
-      imageUrl: imageUrl.trim() || null,
-      slug: newSlug,
-      links: links
-        .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
-        .filter((link) => link.label && link.url),
-    })
-    router.push(`/news/${newSlug}`)
+    try {
+      const updated = await updatePost(post.id, {
+        title: title.trim(),
+        excerpt: excerpt.trim(),
+        content: content.trim(),
+        isPublished,
+        imageUrl: imageUrl.trim() || null,
+        slug: newSlug,
+        links: links
+          .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
+          .filter((link) => link.label && link.url),
+      })
+      router.push(`/news/${updated?.slug ?? newSlug}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save changes.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -231,6 +239,7 @@ export default function EditPostPage() {
               Cancel
             </Link>
           </div>
+          {error && <p className="text-sm font-medium text-destructive">{error}</p>}
         </form>
       </div>
     </div>

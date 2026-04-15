@@ -126,7 +126,7 @@ export async function createPost(
 
   if (!response.ok || !result.ok || !result.post) {
     console.error("Error creating post", result.error)
-    return null
+    throw new Error(result.error ?? "Could not create post")
   }
 
   return mapFromDb(result.post)
@@ -145,7 +145,7 @@ export async function updatePost(
 
   if (!response.ok || !result.ok || !result.post) {
     console.error("Error updating post", result.error)
-    return null
+    throw new Error(result.error ?? "Could not update post")
   }
 
   return mapFromDb(result.post)

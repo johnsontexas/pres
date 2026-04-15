@@ -701,15 +701,15 @@ export function SignYourVote() {
                     </label>
                     <div>
                       <p className="text-sm font-medium text-foreground">Color</p>
-                      <div className="mt-2 flex gap-2">
+                      <div className="mt-2 flex flex-wrap gap-3">
                         {SIGNATURE_COLORS.map((color) => (
                           <button
                             key={color}
                             type="button"
                             onClick={() => updateDraft({ color })}
-                            className={`h-8 w-8 rounded-lg border ${
+                            className={`h-10 w-10 rounded-lg border-2 shadow-sm md:h-12 md:w-12 ${
                               draftPlacement.color === color
-                                ? "border-foreground"
+                                ? "border-foreground ring-2 ring-ring/25"
                                 : "border-border"
                             }`}
                             style={{ backgroundColor: color }}
@@ -915,14 +915,16 @@ export function SignYourVote() {
               </button>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               {SIGNATURE_COLORS.map((color) => (
                 <button
                   key={color}
                   type="button"
                   onClick={() => setSelectedColor(color)}
-                  className={`h-8 w-8 rounded-lg border ${
-                    selectedColor === color ? "border-foreground" : "border-border"
+                  className={`h-10 w-10 rounded-lg border-2 shadow-sm md:h-12 md:w-12 ${
+                    selectedColor === color
+                      ? "border-foreground ring-2 ring-ring/25"
+                      : "border-border"
                   }`}
                   style={{ backgroundColor: color }}
                   aria-label={`Draw with ${color}`}
