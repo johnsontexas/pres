@@ -126,16 +126,33 @@ export function SignYourVote() {
       user ? getMySignature(user.id) : Promise.resolve(null),
       user?.isAdmin ? getAllSignaturesForAdmin() : Promise.resolve([]),
     ])
-    setApproved(approvedRows)
-    setMine(myRow)
-    setAdminSignatures(adminRows)
-    if (myRow) {
+    let currentUserSignature = myRow
+    if (user?.isAdmin && currentUserSignature && currentUserSignature.status !== "approved") {
+      await moderateSignature(currentUserSignature.id, "approved")
+      currentUserSignature = {
+        ...currentUserSignature,
+        status: "approved",
+        reviewedAt: new Date().toISOString(),
+      }
+    }
+
+    const visibleApproved = currentUserSignature
+      ? [
+          ...approvedRows.filter((signature) => signature.id !== currentUserSignature?.id),
+          ...(currentUserSignature.status === "approved" ? [currentUserSignature] : []),
+        ]
+      : approvedRows
+
+    setApproved(visibleApproved)
+    setMine(currentUserSignature)
+    setAdminSignatures(adminRows.filter((signature) => signature.id !== currentUserSignature?.id))
+    if (currentUserSignature) {
       const nextPlacement = {
-        x: myRow.x,
-        y: myRow.y,
-        width: myRow.width,
-        rotation: myRow.rotation,
-        color: myRow.color,
+        x: currentUserSignature.x,
+        y: currentUserSignature.y,
+        width: currentUserSignature.width,
+        rotation: currentUserSignature.rotation,
+        color: currentUserSignature.color,
       }
       placementRef.current = nextPlacement
       setDraftPlacement(nextPlacement)
@@ -226,9 +243,14 @@ export function SignYourVote() {
         authorName: user.name,
         imagePath,
         color: selectedColor,
+        isAdmin: user.isAdmin,
       })
       setMine(saved)
-      setMessage("Signature saved. An admin will approve it before it is locked in.")
+      setMessage(
+        user.isAdmin
+          ? "Signature saved and approved."
+          : "Signature saved. An admin will approve it before it appears for everyone."
+      )
       setIsCaptureOpen(false)
       await refresh()
     } catch {
@@ -328,9 +350,13 @@ export function SignYourVote() {
   ) => {
     if (!user?.isAdmin) return
     setIsSaving(true)
+    setError("")
     try {
-      await moderateSignature(signature.id, status, user.id)
+      await moderateSignature(signature.id, status)
       await refresh()
+      setMessage(status === "approved" ? "Signature approved." : "Signature rejected.")
+    } catch {
+      setError("Could not update that signature. Please try again.")
     } finally {
       setIsSaving(false)
     }
@@ -453,8 +479,9 @@ export function SignYourVote() {
                 </div>
               </div>
               <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
-                Note: every new or replaced signature must be approved by an admin before it
-                appears for everyone.
+                {user.isAdmin
+                  ? "Admin signatures are approved automatically. Student signatures still need your approval before they appear for everyone."
+                  : "Note: every new or replaced signature must be approved by an admin before it appears for everyone."}
               </p>
 
               {mine && (
@@ -596,7 +623,9 @@ export function SignYourVote() {
                   {captureMode === "draw" ? "Write your signature" : "Upload your signature"}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  New signatures wait for admin approval before they appear for everyone.
+                  {user?.isAdmin
+                    ? "Your admin signature will be approved automatically."
+                    : "New signatures wait for admin approval before they appear for everyone."}
                 </p>
               </div>
               <button

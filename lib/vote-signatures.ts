@@ -95,18 +95,19 @@ export async function getMySignature(userId: string): Promise<VoteSignature | nu
 }
 
 export async function getAllSignaturesForAdmin(): Promise<VoteSignature[]> {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("vote_signatures")
-    .select("*")
-    .order("updated_at", { ascending: false })
+  const response = await fetch("/api/vote-signatures/admin")
+  const result = (await response.json()) as {
+    ok: boolean
+    signatures?: VoteSignatureRow[]
+    error?: string
+  }
 
-  if (error || !data) {
-    console.error("Error fetching signatures for admin", error)
+  if (!response.ok || !result.ok || !result.signatures) {
+    console.error("Error fetching signatures for admin", result.error)
     return []
   }
 
-  return (data as VoteSignatureRow[]).map(mapFromDb)
+  return result.signatures.map(mapFromDb)
 }
 
 export async function uploadSignaturePng(userId: string, blob: Blob) {
@@ -130,7 +131,27 @@ export async function saveSignatureImage(input: {
   authorName: string
   imagePath: string
   color: string
+  isAdmin?: boolean
 }) {
+  if (input.isAdmin) {
+    const response = await fetch("/api/vote-signatures/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    const result = (await response.json()) as {
+      ok: boolean
+      signature?: VoteSignatureRow
+      error?: string
+    }
+
+    if (!response.ok || !result.ok || !result.signature) {
+      throw new Error(result.error ?? "Error saving admin signature")
+    }
+
+    return mapFromDb(result.signature)
+  }
+
   const supabase = createClient()
   const { data: existing } = await supabase
     .from("vote_signatures")
@@ -186,21 +207,20 @@ export async function updateSignaturePlacement(
 
 export async function moderateSignature(
   id: string,
-  status: Extract<SignatureStatus, "approved" | "rejected">,
-  adminUserId: string
+  status: Extract<SignatureStatus, "approved" | "rejected">
 ) {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from("vote_signatures")
-    .update({
-      status,
-      reviewed_by: adminUserId,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq("id", id)
+  const response = await fetch("/api/vote-signatures/admin", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, status }),
+  })
+  const result = (await response.json()) as {
+    ok: boolean
+    error?: string
+  }
 
-  if (error) {
-    console.error("Error moderating signature", error)
-    throw error
+  if (!response.ok || !result.ok) {
+    console.error("Error moderating signature", result.error)
+    throw new Error(result.error ?? "Error moderating signature")
   }
 }
