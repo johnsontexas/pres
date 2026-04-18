@@ -7,6 +7,8 @@ import { ArrowLeft, Save } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { createPost, generateSlug } from "@/lib/news"
 
+type ImageFit = "contain" | "cover"
+
 export default function NewPostPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
@@ -14,6 +16,10 @@ export default function NewPostPage() {
   const [excerpt, setExcerpt] = useState("")
   const [content, setContent] = useState("")
   const [imageUrl, setImageUrl] = useState("")
+  const [imageFit, setImageFit] = useState<ImageFit>("contain")
+  const [imagePositionX, setImagePositionX] = useState(50)
+  const [imagePositionY, setImagePositionY] = useState(50)
+  const [imageSize, setImageSize] = useState("")
   const [links, setLinks] = useState([
     { label: "", url: "" },
     { label: "", url: "" },
@@ -53,6 +59,9 @@ export default function NewPostPage() {
         publishedAt: new Date().toISOString(),
         isPublished,
         imageUrl: imageUrl.trim() || null,
+        imageFit,
+        imagePositionX,
+        imagePositionY,
         slug,
         links: links
           .map((link) => ({ label: link.label.trim(), url: link.url.trim() }))
@@ -137,6 +146,79 @@ export default function NewPostPage() {
               placeholder="https://example.com/image.jpg (optional)"
               className="w-full rounded-lg border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
             />
+            {imageUrl.trim() && (
+              <div className="mt-4 rounded-lg border border-border bg-card p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Image preview</p>
+                    <p className="text-xs text-muted-foreground">
+                      {imageSize || "The size will appear after the image loads."}
+                    </p>
+                  </div>
+                  <div className="flex rounded-lg border border-border p-1 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setImageFit("contain")}
+                      className={`rounded-md px-3 py-1.5 font-medium ${
+                        imageFit === "contain" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                      }`}
+                    >
+                      Full image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageFit("cover")}
+                      className={`rounded-md px-3 py-1.5 font-medium ${
+                        imageFit === "cover" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                      }`}
+                    >
+                      Crop to frame
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-4 aspect-[16/9] overflow-hidden rounded-lg bg-muted">
+                  <img
+                    src={imageUrl}
+                    alt=""
+                    className="h-full w-full"
+                    style={{
+                      objectFit: imageFit,
+                      objectPosition: `${imagePositionX}% ${imagePositionY}%`,
+                    }}
+                    onLoad={(event) => {
+                      const image = event.currentTarget
+                      setImageSize(`${image.naturalWidth} x ${image.naturalHeight}px`)
+                    }}
+                  />
+                </div>
+                {imageFit === "cover" && (
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Horizontal crop
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={imagePositionX}
+                        onChange={(event) => setImagePositionX(Number(event.target.value))}
+                        className="mt-2 w-full"
+                      />
+                    </label>
+                    <label className="text-sm font-medium text-foreground">
+                      Vertical crop
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={imagePositionY}
+                        onChange={(event) => setImagePositionY(Number(event.target.value))}
+                        className="mt-2 w-full"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

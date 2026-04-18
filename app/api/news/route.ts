@@ -141,6 +141,9 @@ export async function POST(request: NextRequest) {
     const excerpt = String(body.excerpt ?? "").trim()
     const content = String(body.content ?? "").trim()
     const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null
+    const imageFit = body.imageFit === "cover" ? "cover" : "contain"
+    const imagePositionX = Math.min(100, Math.max(0, Number(body.imagePositionX ?? 50)))
+    const imagePositionY = Math.min(100, Math.max(0, Number(body.imagePositionY ?? 50)))
 
     if (!title || !content) {
       return NextResponse.json(
@@ -161,6 +164,9 @@ export async function POST(request: NextRequest) {
       published_at: String(body.publishedAt ?? new Date().toISOString()),
       is_published: Boolean(body.isPublished),
       image_url: imageUrl,
+      image_fit: imageFit,
+      image_position_x: imagePositionX,
+      image_position_y: imagePositionY,
       media_url: imageUrl ?? "",
       media_type: "image",
       slug,
@@ -212,6 +218,20 @@ export async function POST(request: NextRequest) {
     if (error && isMissingColumnError(error, "media_url")) {
       delete postPayload.media_url
       delete postPayload.media_type
+      const retry = await admin
+        .from("news_posts")
+        .insert(postPayload)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error && isMissingColumnError(error, "image_fit")) {
+      delete postPayload.image_fit
+      delete postPayload.image_position_x
+      delete postPayload.image_position_y
       const retry = await admin
         .from("news_posts")
         .insert(postPayload)

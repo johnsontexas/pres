@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/client"
 export type NewsPost = {
   id: string
   title: string
-  excerpt: string
+  excerpt?: string | null
   content: string
   author: string
   authorId: string
@@ -12,6 +12,9 @@ export type NewsPost = {
   updatedAt: string
   isPublished: boolean
   imageUrl: string | null
+  imageFit: "contain" | "cover"
+  imagePositionX: number
+  imagePositionY: number
   slug: string
   links: NewsPostLink[]
   likes: string[]
@@ -33,7 +36,12 @@ function mapFromDb(row: {
   created_at: string
   updated_at: string
   is_published: boolean
-  image_url: string | null
+  image_url?: string | null
+  media_url?: string | null
+  caption?: string | null
+  image_fit?: "contain" | "cover" | null
+  image_position_x?: number | string | null
+  image_position_y?: number | string | null
   slug: string
   links?: NewsPostLink[] | null
   likes?: string[] | null
@@ -41,7 +49,7 @@ function mapFromDb(row: {
   return {
     id: row.id,
     title: row.title,
-    excerpt: row.excerpt,
+    excerpt: row.excerpt ?? row.caption ?? "",
     content: row.content,
     author: row.author,
     authorId: row.author_id,
@@ -49,7 +57,10 @@ function mapFromDb(row: {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     isPublished: row.is_published,
-    imageUrl: row.image_url,
+    imageUrl: row.image_url ?? row.media_url ?? null,
+    imageFit: row.image_fit === "cover" ? "cover" : "contain",
+    imagePositionX: Number(row.image_position_x ?? 50),
+    imagePositionY: Number(row.image_position_y ?? 50),
     slug: row.slug,
     links: row.links ?? [],
     likes: row.likes ?? [],
@@ -117,6 +128,9 @@ export async function createPost(
       publishedAt: post.publishedAt,
       isPublished: post.isPublished,
       imageUrl: post.imageUrl,
+      imageFit: post.imageFit,
+      imagePositionX: post.imagePositionX,
+      imagePositionY: post.imagePositionY,
       slug: post.slug,
       links: post.links,
     }),

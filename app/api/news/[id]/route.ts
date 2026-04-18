@@ -165,6 +165,13 @@ export async function PATCH(
       updates.media_url = imageUrl ?? ""
       updates.media_type = "image"
     }
+    if (body.imageFit !== undefined) updates.image_fit = body.imageFit === "cover" ? "cover" : "contain"
+    if (body.imagePositionX !== undefined) {
+      updates.image_position_x = Math.min(100, Math.max(0, Number(body.imagePositionX)))
+    }
+    if (body.imagePositionY !== undefined) {
+      updates.image_position_y = Math.min(100, Math.max(0, Number(body.imagePositionY)))
+    }
     if (body.slug !== undefined) updates.slug = String(body.slug).trim()
     if (body.links !== undefined) updates.links = cleanLinks(body.links)
 
@@ -205,6 +212,21 @@ export async function PATCH(
     if (error && isMissingColumnError(error, "media_url") && "media_url" in updates) {
       delete updates.media_url
       delete updates.media_type
+      const retry = await admin
+        .from("news_posts")
+        .update(updates)
+        .eq("id", id)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error && isMissingColumnError(error, "image_fit") && "image_fit" in updates) {
+      delete updates.image_fit
+      delete updates.image_position_x
+      delete updates.image_position_y
       const retry = await admin
         .from("news_posts")
         .update(updates)

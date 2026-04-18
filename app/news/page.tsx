@@ -71,7 +71,10 @@ export default function NewsPage() {
                       <img
                         src={post.imageUrl}
                         alt={post.title}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className={`h-full w-full transition-transform duration-300 group-hover:scale-105 ${
+                          post.imageFit === "cover" ? "object-cover" : "object-contain"
+                        }`}
+                        style={{ objectPosition: `${post.imagePositionX}% ${post.imagePositionY}%` }}
                       />
                     </div>
                   )}

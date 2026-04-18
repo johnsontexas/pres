@@ -103,11 +103,20 @@ export default function NewsPostPage() {
 
       <article className="mx-auto max-w-4xl px-6 pb-16 lg:pb-24">
         {post.imageUrl && (
-          <div className="mb-12 aspect-[21/9] w-full overflow-hidden rounded-3xl">
+          <div
+            className={`mb-12 w-full overflow-hidden rounded-3xl bg-muted ${
+              post.imageFit === "cover" ? "aspect-[21/9]" : ""
+            }`}
+          >
             <img
               src={post.imageUrl}
               alt={post.title}
-              className="h-full w-full object-cover"
+              className={`w-full ${
+                post.imageFit === "cover"
+                  ? "h-full object-cover"
+                  : "h-auto max-h-[34rem] object-contain"
+              }`}
+              style={{ objectPosition: `${post.imagePositionX}% ${post.imagePositionY}%` }}
             />
           </div>
         )}

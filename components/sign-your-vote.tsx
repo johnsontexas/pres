@@ -37,7 +37,7 @@ function validSignatureColor(color: string) {
   return SIGNATURE_COLORS.includes(color) ? color : "#FFFFFF"
 }
 
-function signatureStyle(signature: VoteSignature, canDrag: boolean): CSSProperties {
+function signatureStyle(signature: VoteSignature, canDrag: boolean, glowLayer = false): CSSProperties {
   const color = validSignatureColor(signature.color)
   return {
     left: `${signature.x * 100}%`,
@@ -53,12 +53,10 @@ function signatureStyle(signature: VoteSignature, canDrag: boolean): CSSProperti
     WebkitMaskSize: "contain",
     maskPosition: "center",
     WebkitMaskPosition: "center",
-    opacity: signature.status === "approved" ? 0.92 : 0.55,
-    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
-    filter: signature.glowEnabled
-      ? `drop-shadow(0 0 8px ${color}) drop-shadow(0 0 18px ${color}) drop-shadow(0 0 30px ${color})`
-      : undefined,
-    cursor: canDrag ? "grab" : "default",
+    opacity: glowLayer ? 0.82 : signature.status === "approved" ? 0.92 : 0.55,
+    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)${glowLayer ? " scale(1.16)" : ""}`,
+    filter: glowLayer ? "blur(9px) saturate(1.45)" : undefined,
+    cursor: canDrag && !glowLayer ? "grab" : "default",
   }
 }
 
@@ -488,16 +486,23 @@ export function SignYourVote() {
             >
               <div className="pointer-events-none absolute inset-0 z-0">
                 {displayedSignatures.map((signature) => (
-                  <div
-                    key={signature.id}
-                    className="absolute"
-                    style={signatureStyle(signature, false)}
-                    title={
-                      signature.status === "pending"
-                        ? `${signature.authorName} - pending approval`
-                        : signature.authorName
-                    }
-                  />
+                  <div key={signature.id}>
+                    {signature.glowEnabled && (
+                      <div
+                        className="absolute"
+                        style={signatureStyle(signature, false, true)}
+                      />
+                    )}
+                    <div
+                      className="absolute"
+                      style={signatureStyle(signature, false)}
+                      title={
+                        signature.status === "pending"
+                          ? `${signature.authorName} - pending approval`
+                          : signature.authorName
+                      }
+                    />
+                  </div>
                 ))}
               </div>
               <div className="absolute left-[18%] top-[8%] z-10 max-w-[64%] rounded-lg border border-primary-foreground/25 bg-primary-foreground/5 px-3 py-1.5 text-center text-[10px] font-medium tracking-wide text-primary-foreground/90 md:left-[6%] md:top-[15%] md:max-w-[39%] md:px-4 md:py-2 md:text-left md:text-xs">
@@ -648,24 +653,31 @@ export function SignYourVote() {
               const isMine = signature.id === mine?.id
               const canDrag = canMoveSignature(signature)
               return (
-                <div
-                  key={signature.id}
-                  className={`absolute touch-none transition-opacity ${
-                    isMine || signature.status === "pending"
-                      ? "outline outline-2 outline-offset-4 outline-primary-foreground/35"
-                      : ""
-                  }`}
-                  style={signatureStyle(signature, canDrag)}
-                  title={
-                    signature.status === "pending"
-                      ? `${signature.authorName} - pending approval`
-                      : signature.authorName
-                  }
-                  onPointerDown={(event) => beginDrag(event, signature)}
-                  onPointerMove={dragSignature}
-                  onPointerUp={endDrag}
-                  onPointerCancel={endDrag}
-                />
+                <div key={signature.id}>
+                  {signature.glowEnabled && (
+                    <div
+                      className="pointer-events-none absolute"
+                      style={signatureStyle(signature, false, true)}
+                    />
+                  )}
+                  <div
+                    className={`absolute touch-none transition-opacity ${
+                      isMine || signature.status === "pending"
+                        ? "outline outline-2 outline-offset-4 outline-primary-foreground/35"
+                        : ""
+                    }`}
+                    style={signatureStyle(signature, canDrag)}
+                    title={
+                      signature.status === "pending"
+                        ? `${signature.authorName} - pending approval`
+                        : signature.authorName
+                    }
+                    onPointerDown={(event) => beginDrag(event, signature)}
+                    onPointerMove={dragSignature}
+                    onPointerUp={endDrag}
+                    onPointerCancel={endDrag}
+                  />
+                </div>
               )
             })}
             {isRefreshing && (

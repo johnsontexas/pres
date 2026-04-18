@@ -12,7 +12,7 @@ function displaySignatureColor(color: string) {
   return color === "#111827" ? "#FFFFFF" : color
 }
 
-function signatureStyle(signature: VoteSignature): CSSProperties {
+function signatureStyle(signature: VoteSignature, glowLayer = false): CSSProperties {
   const color = displaySignatureColor(signature.color)
   return {
     left: `${signature.x * 100}%`,
@@ -28,11 +28,9 @@ function signatureStyle(signature: VoteSignature): CSSProperties {
     WebkitMaskSize: "contain",
     maskPosition: "center",
     WebkitMaskPosition: "center",
-    opacity: signature.status === "approved" ? 0.82 : 0.42,
-    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
-    filter: signature.glowEnabled
-      ? `drop-shadow(0 0 8px ${color}) drop-shadow(0 0 18px ${color}) drop-shadow(0 0 30px ${color})`
-      : undefined,
+    opacity: glowLayer ? 0.78 : signature.status === "approved" ? 0.82 : 0.42,
+    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)${glowLayer ? " scale(1.16)" : ""}`,
+    filter: glowLayer ? "blur(9px) saturate(1.45)" : undefined,
   }
 }
 
@@ -80,11 +78,18 @@ export function HeroSignatures() {
       aria-hidden
     >
       {signatures.map((signature) => (
-        <div
-          key={signature.id}
-          className="absolute"
-          style={signatureStyle(signature)}
-        />
+        <div key={signature.id}>
+          {signature.glowEnabled && (
+            <div
+              className="absolute"
+              style={signatureStyle(signature, true)}
+            />
+          )}
+          <div
+            className="absolute"
+            style={signatureStyle(signature)}
+          />
+        </div>
       ))}
     </div>
   )
