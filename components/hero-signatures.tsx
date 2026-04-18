@@ -12,13 +12,19 @@ function displaySignatureColor(color: string) {
   return color === "#111827" ? "#FFFFFF" : color
 }
 
-function signatureStyle(signature: VoteSignature, glowLayer = false): CSSProperties {
-  const color = displaySignatureColor(signature.color)
+function signaturePlacementStyle(signature: VoteSignature): CSSProperties {
   return {
     left: `${signature.x * 100}%`,
     top: `${signature.y * 100}%`,
     width: `${signature.width * 100}%`,
     aspectRatio: "3 / 1",
+    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
+  }
+}
+
+function signatureInkStyle(signature: VoteSignature): CSSProperties {
+  const color = displaySignatureColor(signature.color)
+  return {
     backgroundColor: color,
     maskImage: `url(${signature.imageUrl})`,
     WebkitMaskImage: `url(${signature.imageUrl})`,
@@ -28,9 +34,22 @@ function signatureStyle(signature: VoteSignature, glowLayer = false): CSSPropert
     WebkitMaskSize: "contain",
     maskPosition: "center",
     WebkitMaskPosition: "center",
-    opacity: glowLayer ? 0.78 : signature.status === "approved" ? 0.82 : 0.42,
-    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)${glowLayer ? " scale(1.16)" : ""}`,
-    filter: glowLayer ? "blur(9px) saturate(1.45)" : undefined,
+    opacity: signature.status === "approved" ? 0.82 : 0.42,
+  }
+}
+
+function signatureGlowStyle(signature: VoteSignature): CSSProperties {
+  const color = displaySignatureColor(signature.color)
+  return {
+    backgroundColor: color,
+    maskImage: `url(${signature.imageUrl})`,
+    WebkitMaskImage: `url(${signature.imageUrl})`,
+    maskRepeat: "no-repeat",
+    WebkitMaskRepeat: "no-repeat",
+    maskSize: "contain",
+    WebkitMaskSize: "contain",
+    maskPosition: "center",
+    WebkitMaskPosition: "center",
   }
 }
 
@@ -78,17 +97,20 @@ export function HeroSignatures() {
       aria-hidden
     >
       {signatures.map((signature) => (
-        <div key={signature.id}>
+        <div
+          key={signature.id}
+          className="absolute"
+          style={signaturePlacementStyle(signature)}
+        >
           {signature.glowEnabled && (
             <div
-              className="absolute"
-              style={signatureStyle(signature, true)}
-            />
+              className="absolute inset-0"
+              style={{ filter: "blur(6px) saturate(1.7)", opacity: 1 }}
+            >
+              <div className="h-full w-full" style={signatureGlowStyle(signature)} />
+            </div>
           )}
-          <div
-            className="absolute"
-            style={signatureStyle(signature)}
-          />
+          <div className="absolute inset-0" style={signatureInkStyle(signature)} />
         </div>
       ))}
     </div>

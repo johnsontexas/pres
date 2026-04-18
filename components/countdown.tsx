@@ -1,15 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { DEFAULT_COUNTDOWN_SETTINGS } from "@/lib/countdown-settings"
+import type { CountdownSettings } from "@/lib/countdown-settings"
 
-/** Start of election week (countdown target). */
-const ELECTION_WEEK_START = new Date("2026-04-27T08:00:00")
-
-function getTimeLeft() {
+function getTimeLeft(targetDate: string) {
   const now = new Date()
-  const diff = ELECTION_WEEK_START.getTime() - now.getTime()
+  const target = new Date(targetDate)
+  const diff = target.getTime() - now.getTime()
 
-  if (diff <= 0) {
+  if (Number.isNaN(target.getTime()) || diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true }
   }
 
@@ -36,23 +36,43 @@ function TimeBlock({ value, label }: { value: number; label: string }) {
 }
 
 export function Countdown() {
-  const [time, setTime] = useState(getTimeLeft)
+  const [settings, setSettings] = useState<CountdownSettings>(DEFAULT_COUNTDOWN_SETTINGS)
+  const [time, setTime] = useState(() => getTimeLeft(DEFAULT_COUNTDOWN_SETTINGS.targetDate))
+  const target = new Date(settings.targetDate)
+  const targetLabel = target.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
+  const eventName = settings.mode === "day" ? "Election Day" : "Election Week"
+
+  useEffect(() => {
+    fetch("/api/countdown")
+      .then((response) => response.json())
+      .then((result: { countdown?: CountdownSettings }) => {
+        if (result.countdown) {
+          setSettings(result.countdown)
+          setTime(getTimeLeft(result.countdown.targetDate))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTime(getTimeLeft())
+      setTime(getTimeLeft(settings.targetDate))
     }, 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [settings.targetDate])
 
   if (time.expired) {
     return (
       <section className="bg-background px-6 py-16 text-center">
         <h2 className="font-serif text-3xl font-bold text-primary md:text-4xl">
-          Election Week Is Here!
+          {eventName} Is Here!
         </h2>
         <p className="mt-3 text-lg text-muted-foreground">
-          Go vote during election week. Make your voice heard.
+          Go vote. Make your voice heard.
         </p>
       </section>
     )
@@ -61,10 +81,10 @@ export function Countdown() {
   return (
     <section className="bg-background px-6 py-16 text-center">
       <h2 className="font-serif text-2xl font-bold text-foreground md:text-3xl text-balance">
-        Countdown to Election Week
+        Countdown to {eventName}
       </h2>
       <p className="mt-2 text-sm text-muted-foreground">
-        Begins April 27, 2026
+        {settings.mode === "day" ? "Election day" : "Begins"} {targetLabel}
       </p>
       <div className="mt-8 flex items-center justify-center gap-3 md:gap-6">
         <TimeBlock value={time.days} label="Days" />

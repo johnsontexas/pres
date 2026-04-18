@@ -5,6 +5,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Power, Shield, Sparkles, UserPlus, UserX } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
+import { DEFAULT_COUNTDOWN_SETTINGS } from "@/lib/countdown-settings"
+import type { CountdownSettings } from "@/lib/countdown-settings"
 
 type AdminQuestion = {
   id: string
@@ -40,11 +42,24 @@ type AdminPanelState = {
     caption: string
     showBrand: boolean
   }
+  countdown: CountdownSettings
   questions: AdminQuestion[]
   askers: AdminAsker[]
   signatures: AdminSignature[]
   admins: { email: string }[]
   superAdmins: { email: string }[]
+}
+
+function toDateTimeLocal(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return offsetDate.toISOString().slice(0, 16)
+}
+
+function fromDateTimeLocal(value: string) {
+  if (!value) return DEFAULT_COUNTDOWN_SETTINGS.targetDate
+  return new Date(value).toISOString()
 }
 
 export default function AdminPage() {
@@ -72,6 +87,7 @@ export default function AdminPage() {
         caption: "Please check back later.",
         showBrand: true,
       },
+      countdown: result.countdown ?? DEFAULT_COUNTDOWN_SETTINGS,
       questions: result.questions ?? [],
       askers: result.askers ?? [],
       signatures: result.signatures ?? [],
@@ -260,6 +276,85 @@ export default function AdminPage() {
                 className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
               >
                 Save message
+              </button>
+            </div>
+          </section>
+        )}
+
+        {panel.isSuperAdmin && (
+          <section className="mt-6 rounded-lg border border-border bg-card p-5">
+            <h2 className="font-semibold text-foreground">Countdown</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Super admins can set the exact countdown date and choose whether visitors see Election Week or Election Day.
+              It is still set to Election Week right now.
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+              <label className="text-sm font-medium text-foreground">
+                Specific countdown date
+                <input
+                  type="datetime-local"
+                  value={toDateTimeLocal(panel.countdown.targetDate)}
+                  onChange={(event) =>
+                    setPanel({
+                      ...panel,
+                      countdown: {
+                        ...panel.countdown,
+                        targetDate: fromDateTimeLocal(event.target.value),
+                      },
+                    })
+                  }
+                  className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+              <div className="flex rounded-lg border border-border p-1 text-sm">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPanel({ ...panel, countdown: { ...panel.countdown, mode: "week" } })
+                  }
+                  className={`rounded-md px-3 py-2 font-semibold ${
+                    panel.countdown.mode === "week"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Week
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPanel({ ...panel, countdown: { ...panel.countdown, mode: "day" } })
+                  }
+                  className={`rounded-md px-3 py-2 font-semibold ${
+                    panel.countdown.mode === "day"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Day
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="text-xs text-muted-foreground">
+                Current display: Countdown to {panel.countdown.mode === "day" ? "Election Day" : "Election Week"}
+              </p>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() =>
+                  adminAction(
+                    {
+                      action: "set-countdown",
+                      targetDate: panel.countdown.targetDate,
+                      countdownMode: panel.countdown.mode,
+                    },
+                    "Countdown saved."
+                  )
+                }
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                Save countdown
               </button>
             </div>
           </section>

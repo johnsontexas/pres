@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { DEFAULT_COUNTDOWN_SETTINGS, normalizeCountdownSettings } from "@/lib/countdown-settings"
 import { isSuperAdminEmail, requireAdmin, requireSuperAdmin } from "@/lib/server-auth"
 
 async function getReviewRequired(admin: ReturnType<typeof createAdminClient>) {
@@ -33,6 +34,16 @@ async function getShutdownSettings(admin: ReturnType<typeof createAdminClient>) 
   }
 }
 
+async function getCountdownSettings(admin: ReturnType<typeof createAdminClient>) {
+  const { data } = await admin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "election_countdown")
+    .maybeSingle()
+
+  return normalizeCountdownSettings(data?.value)
+}
+
 export async function GET() {
   try {
     const auth = await requireAdmin()
@@ -41,9 +52,10 @@ export async function GET() {
     }
 
     const admin = createAdminClient()
-    const [reviewRequired, shutdown, questions, banned, signatures, admins, superAdmins] = await Promise.all([
+    const [reviewRequired, shutdown, countdown, questions, banned, signatures, admins, superAdmins] = await Promise.all([
       getReviewRequired(admin),
       getShutdownSettings(admin),
+      getCountdownSettings(admin),
       admin
         .from("questions")
         .select("id, author, author_id, text, created_at, status, is_anonymous")
@@ -82,6 +94,7 @@ export async function GET() {
       isSuperAdmin,
       reviewRequired,
       shutdown,
+      countdown,
       questions: questions.data ?? [],
       askers: [...askerMap.values()].sort((a, b) => b.questionCount - a.questionCount),
       signatures: signatures.error ? [] : signatures.data ?? [],
@@ -105,7 +118,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = (await request.json()) as {
-      action?: "set-review-required" | "set-ban" | "set-glow" | "moderate-question" | "set-shutdown" | "add-admin" | "delete-admin"
+      action?: "set-review-required" | "set-ban" | "set-glow" | "moderate-question" | "set-shutdown" | "set-countdown" | "add-admin" | "delete-admin"
       enabled?: boolean
       userId?: string
       signatureId?: string
@@ -115,6 +128,8 @@ export async function PATCH(request: NextRequest) {
       title?: string
       caption?: string
       showBrand?: boolean
+      targetDate?: string
+      countdownMode?: "week" | "day"
     }
     const admin = createAdminClient()
 
@@ -179,6 +194,27 @@ export async function PATCH(request: NextRequest) {
             caption: String(body.caption ?? "Please check back later.").trim(),
             showBrand: body.showBrand !== false,
           },
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" }
+      )
+      if (error) throw error
+      return NextResponse.json({ ok: true })
+    }
+
+    if (body.action === "set-countdown") {
+      const superAuth = await requireSuperAdmin()
+      if ("error" in superAuth) {
+        return NextResponse.json({ ok: false, error: superAuth.error }, { status: superAuth.status })
+      }
+      const countdown = normalizeCountdownSettings({
+        targetDate: body.targetDate || DEFAULT_COUNTDOWN_SETTINGS.targetDate,
+        mode: body.countdownMode,
+      })
+      const { error } = await admin.from("app_settings").upsert(
+        {
+          key: "election_countdown",
+          value: countdown,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "key" }

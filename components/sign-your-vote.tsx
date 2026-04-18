@@ -37,13 +37,20 @@ function validSignatureColor(color: string) {
   return SIGNATURE_COLORS.includes(color) ? color : "#FFFFFF"
 }
 
-function signatureStyle(signature: VoteSignature, canDrag: boolean, glowLayer = false): CSSProperties {
-  const color = validSignatureColor(signature.color)
+function signaturePlacementStyle(signature: VoteSignature, canDrag: boolean): CSSProperties {
   return {
     left: `${signature.x * 100}%`,
     top: `${signature.y * 100}%`,
     width: `${signature.width * 100}%`,
     aspectRatio: "3 / 1",
+    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
+    cursor: canDrag ? "grab" : "default",
+  }
+}
+
+function signatureInkStyle(signature: VoteSignature): CSSProperties {
+  const color = validSignatureColor(signature.color)
+  return {
     backgroundColor: color,
     maskImage: `url(${signature.imageUrl})`,
     WebkitMaskImage: `url(${signature.imageUrl})`,
@@ -53,10 +60,22 @@ function signatureStyle(signature: VoteSignature, canDrag: boolean, glowLayer = 
     WebkitMaskSize: "contain",
     maskPosition: "center",
     WebkitMaskPosition: "center",
-    opacity: glowLayer ? 0.82 : signature.status === "approved" ? 0.92 : 0.55,
-    transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)${glowLayer ? " scale(1.16)" : ""}`,
-    filter: glowLayer ? "blur(9px) saturate(1.45)" : undefined,
-    cursor: canDrag && !glowLayer ? "grab" : "default",
+    opacity: signature.status === "approved" ? 0.92 : 0.55,
+  }
+}
+
+function signatureGlowStyle(signature: VoteSignature): CSSProperties {
+  const color = validSignatureColor(signature.color)
+  return {
+    backgroundColor: color,
+    maskImage: `url(${signature.imageUrl})`,
+    WebkitMaskImage: `url(${signature.imageUrl})`,
+    maskRepeat: "no-repeat",
+    WebkitMaskRepeat: "no-repeat",
+    maskSize: "contain",
+    WebkitMaskSize: "contain",
+    maskPosition: "center",
+    WebkitMaskPosition: "center",
   }
 }
 
@@ -486,22 +505,25 @@ export function SignYourVote() {
             >
               <div className="pointer-events-none absolute inset-0 z-0">
                 {displayedSignatures.map((signature) => (
-                  <div key={signature.id}>
+                  <div
+                    key={signature.id}
+                    className="absolute"
+                    style={signaturePlacementStyle(signature, false)}
+                    title={
+                      signature.status === "pending"
+                        ? `${signature.authorName} - pending approval`
+                        : signature.authorName
+                    }
+                  >
                     {signature.glowEnabled && (
                       <div
-                        className="absolute"
-                        style={signatureStyle(signature, false, true)}
-                      />
+                        className="absolute inset-0"
+                        style={{ filter: "blur(6px) saturate(1.7)", opacity: 1 }}
+                      >
+                        <div className="h-full w-full" style={signatureGlowStyle(signature)} />
+                      </div>
                     )}
-                    <div
-                      className="absolute"
-                      style={signatureStyle(signature, false)}
-                      title={
-                        signature.status === "pending"
-                          ? `${signature.authorName} - pending approval`
-                          : signature.authorName
-                      }
-                    />
+                    <div className="absolute inset-0" style={signatureInkStyle(signature)} />
                   </div>
                 ))}
               </div>
@@ -653,30 +675,33 @@ export function SignYourVote() {
               const isMine = signature.id === mine?.id
               const canDrag = canMoveSignature(signature)
               return (
-                <div key={signature.id}>
+                <div
+                  key={signature.id}
+                  className={`absolute touch-none transition-opacity ${
+                    isMine || signature.status === "pending"
+                      ? "outline outline-2 outline-offset-4 outline-primary-foreground/35"
+                      : ""
+                  }`}
+                  style={signaturePlacementStyle(signature, canDrag)}
+                  title={
+                    signature.status === "pending"
+                      ? `${signature.authorName} - pending approval`
+                      : signature.authorName
+                  }
+                  onPointerDown={(event) => beginDrag(event, signature)}
+                  onPointerMove={dragSignature}
+                  onPointerUp={endDrag}
+                  onPointerCancel={endDrag}
+                >
                   {signature.glowEnabled && (
                     <div
-                      className="pointer-events-none absolute"
-                      style={signatureStyle(signature, false, true)}
-                    />
+                      className="pointer-events-none absolute inset-0"
+                      style={{ filter: "blur(6px) saturate(1.7)", opacity: 1 }}
+                    >
+                      <div className="h-full w-full" style={signatureGlowStyle(signature)} />
+                    </div>
                   )}
-                  <div
-                    className={`absolute touch-none transition-opacity ${
-                      isMine || signature.status === "pending"
-                        ? "outline outline-2 outline-offset-4 outline-primary-foreground/35"
-                        : ""
-                    }`}
-                    style={signatureStyle(signature, canDrag)}
-                    title={
-                      signature.status === "pending"
-                        ? `${signature.authorName} - pending approval`
-                        : signature.authorName
-                    }
-                    onPointerDown={(event) => beginDrag(event, signature)}
-                    onPointerMove={dragSignature}
-                    onPointerUp={endDrag}
-                    onPointerCancel={endDrag}
-                  />
+                  <div className="pointer-events-none absolute inset-0" style={signatureInkStyle(signature)} />
                 </div>
               )
             })}
