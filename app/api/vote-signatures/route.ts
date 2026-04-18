@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     const userIsAdmin = await isAdminEmail(auth.email)
     const { data: existing } = await admin
       .from("vote_signatures")
-      .select("x, y, width, rotation, glow_enabled")
+      .select("x, y, width, rotation, glow_enabled, glow_granted_by_admin")
       .eq("user_id", auth.user.id)
       .maybeSingle()
 
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
           y: Number(existing?.y ?? 0.82),
           width: Number(existing?.width ?? 0.18),
           rotation: Number(existing?.rotation ?? 0),
-          glow_enabled: Boolean(existing?.glow_enabled ?? false),
+          glow_enabled: Boolean(existing?.glow_enabled || existing?.glow_granted_by_admin),
           status: userIsAdmin ? "approved" : "pending",
           reviewed_by: userIsAdmin ? auth.user.id : null,
           reviewed_at: reviewedAt,

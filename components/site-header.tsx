@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Menu, X, LogIn, LogOut, User } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
@@ -18,6 +19,9 @@ const navLinks = [
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, signOut } = useAuth()
+  const pathname = usePathname()
+
+  if (pathname === "/shutdown") return null
 
   return (
     <header className="font-display sticky top-0 z-50 border-b border-primary-foreground/10 bg-primary/95 backdrop-blur-md">

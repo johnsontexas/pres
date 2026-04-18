@@ -74,20 +74,26 @@ async function glowCreditCount(admin: ReturnType<typeof createAdminClient>, emai
 
 async function responseForUser(userId: string, email: string) {
   const admin = createAdminClient()
-  const [{ data: mine }, credits] = await Promise.all([
+  const [{ data: mine }, { data: signature }, credits] = await Promise.all([
     admin
       .from("vote_signature_referrals")
       .select("referred_email")
       .eq("referrer_user_id", userId)
       .order("created_at", { ascending: true }),
+    admin
+      .from("vote_signatures")
+      .select("glow_granted_by_admin")
+      .eq("user_id", userId)
+      .maybeSingle(),
     glowCreditCount(admin, email),
   ])
+  const adminGrantedGlow = Boolean(signature?.glow_granted_by_admin)
 
   return NextResponse.json({
     ok: true,
     emails: (mine ?? []).map((row) => row.referred_email as string),
     credits,
-    glowUnlocked: credits >= MAX_REFERRALS,
+    glowUnlocked: adminGrantedGlow || credits >= MAX_REFERRALS,
     results: [],
   })
 }

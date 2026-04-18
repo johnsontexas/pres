@@ -121,11 +121,14 @@ export async function createPost(
       links: post.links,
     }),
   })
-  const result = (await response.json()) as { ok: boolean; post?: Parameters<typeof mapFromDb>[0]; error?: string }
+  const result = (await response.json().catch(async () => ({
+    ok: false,
+    error: await response.text().catch(() => ""),
+  }))) as { ok: boolean; post?: Parameters<typeof mapFromDb>[0]; error?: string }
 
   if (!response.ok || !result.ok || !result.post) {
     console.error("Error creating post", result.error)
-    throw new Error(result.error ?? "Could not create post")
+    throw new Error(result.error || `Could not create post. Server returned ${response.status}.`)
   }
 
   return mapFromDb(result.post)

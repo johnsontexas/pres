@@ -5,6 +5,14 @@ const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
   .split(",")
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean)
+const SUPER_ADMIN_EMAILS = (
+  process.env.SUPER_ADMIN_EMAILS ??
+  process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAILS ??
+  ""
+)
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean)
 
 export async function getSignedInUser() {
   const supabase = await createClient()
@@ -23,7 +31,7 @@ export async function isAdminEmail(email: string) {
   const admin = createAdminClient()
   const cleanEmail = email.toLowerCase()
 
-  if (ADMIN_EMAILS.includes(cleanEmail)) {
+  if (ADMIN_EMAILS.includes(cleanEmail) || SUPER_ADMIN_EMAILS.includes(cleanEmail)) {
     await admin.from("admin_emails").upsert({ email: cleanEmail }, { onConflict: "email" })
     return true
   }
@@ -37,12 +45,42 @@ export async function isAdminEmail(email: string) {
   return Boolean(data)
 }
 
+export async function isSuperAdminEmail(email: string) {
+  const admin = createAdminClient()
+  const cleanEmail = email.toLowerCase()
+
+  if (SUPER_ADMIN_EMAILS.includes(cleanEmail)) {
+    await admin.from("super_admin_emails").upsert({ email: cleanEmail }, { onConflict: "email" })
+    await admin.from("admin_emails").upsert({ email: cleanEmail }, { onConflict: "email" })
+    return true
+  }
+
+  const { data } = await admin
+    .from("super_admin_emails")
+    .select("email")
+    .eq("email", cleanEmail)
+    .maybeSingle()
+
+  return Boolean(data)
+}
+
 export async function requireAdmin() {
   const auth = await getSignedInUser()
   if ("error" in auth) return auth
 
   if (!(await isAdminEmail(auth.email))) {
     return { error: "Not an admin", status: 403 as const }
+  }
+
+  return auth
+}
+
+export async function requireSuperAdmin() {
+  const auth = await getSignedInUser()
+  if ("error" in auth) return auth
+
+  if (!(await isSuperAdminEmail(auth.email))) {
+    return { error: "Not a super admin", status: 403 as const }
   }
 
   return auth

@@ -106,7 +106,7 @@ export function normalizeSignaturePlacement<T extends SignaturePlacement>(
       const closestDistance = Math.hypot(closest.x - placement.x, closest.y - placement.y)
       const candidateDistance = Math.hypot(candidate.x - placement.x, candidate.y - placement.y)
       return candidateDistance < closestDistance ? candidate : closest
-    }, choices[0])
+    }, choices[0]) as T & { x: number; y: number }
   }
 
   return next

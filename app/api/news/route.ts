@@ -65,7 +65,7 @@ function cleanLinks(value: unknown) {
 }
 
 function isMissingColumnError(error: unknown, column: string) {
-  const message = error instanceof Error ? error.message : String(error ?? "")
+  const message = errorMessage(error)
   const code = typeof error === "object" && error && "code" in error
     ? String((error as { code?: unknown }).code ?? "")
     : ""
@@ -73,8 +73,30 @@ function isMissingColumnError(error: unknown, column: string) {
   return code === "42703" || message.toLowerCase().includes(`'${column}' column`) || message.toLowerCase().includes(`column ${column}`)
 }
 
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (typeof error === "object" && error) {
+    const details = error as {
+      message?: unknown
+      details?: unknown
+      hint?: unknown
+      code?: unknown
+    }
+    return [
+      details.message,
+      details.details,
+      details.hint ? `Hint: ${details.hint}` : null,
+      details.code ? `Code: ${details.code}` : null,
+    ]
+      .filter(Boolean)
+      .map(String)
+      .join(" ")
+  }
+  return String(error || "Could not create post")
+}
+
 function publicNewsError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Could not create post"
+  const message = errorMessage(error)
   if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
     return "SUPABASE_SERVICE_ROLE_KEY is not set in Netlify. Add it, then redeploy."
   }
@@ -116,7 +138,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const admin = createAdminClient()
     const title = String(body.title ?? "").trim()
+    const excerpt = String(body.excerpt ?? "").trim()
     const content = String(body.content ?? "").trim()
+    const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null
 
     if (!title || !content) {
       return NextResponse.json(
@@ -128,13 +152,17 @@ export async function POST(request: NextRequest) {
     const slug = await uniqueSlug(admin, String(body.slug ?? "").trim())
     const postPayload: Record<string, unknown> = {
       title,
-      excerpt: String(body.excerpt ?? "").trim(),
+      excerpt,
+      caption: excerpt,
       content,
       author: String(body.author ?? auth.user.user_metadata?.name ?? "Admin"),
+      author_name: String(body.author ?? auth.user.user_metadata?.name ?? "Admin"),
       author_id: auth.user.id,
       published_at: String(body.publishedAt ?? new Date().toISOString()),
       is_published: Boolean(body.isPublished),
-      image_url: body.imageUrl ? String(body.imageUrl).trim() : null,
+      image_url: imageUrl,
+      media_url: imageUrl ?? "",
+      media_type: "image",
       slug,
       links: cleanLinks(body.links),
     }
@@ -147,6 +175,43 @@ export async function POST(request: NextRequest) {
 
     if (error && isMissingColumnError(error, "links")) {
       delete postPayload.links
+      const retry = await admin
+        .from("news_posts")
+        .insert(postPayload)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error && isMissingColumnError(error, "caption")) {
+      delete postPayload.caption
+      const retry = await admin
+        .from("news_posts")
+        .insert(postPayload)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error && isMissingColumnError(error, "author_name")) {
+      delete postPayload.author_name
+      const retry = await admin
+        .from("news_posts")
+        .insert(postPayload)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error && isMissingColumnError(error, "media_url")) {
+      delete postPayload.media_url
+      delete postPayload.media_type
       const retry = await admin
         .from("news_posts")
         .insert(postPayload)

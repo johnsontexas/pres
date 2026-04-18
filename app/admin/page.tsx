@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Shield, Sparkles, UserX } from "lucide-react"
+import { Power, Shield, Sparkles, UserPlus, UserX } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 
 type AdminQuestion = {
@@ -32,10 +32,19 @@ type AdminSignature = {
 }
 
 type AdminPanelState = {
+  isSuperAdmin: boolean
   reviewRequired: boolean
+  shutdown: {
+    enabled: boolean
+    title: string
+    caption: string
+    showBrand: boolean
+  }
   questions: AdminQuestion[]
   askers: AdminAsker[]
   signatures: AdminSignature[]
+  admins: { email: string }[]
+  superAdmins: { email: string }[]
 }
 
 export default function AdminPage() {
@@ -45,6 +54,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
+  const [newAdminEmail, setNewAdminEmail] = useState("")
 
   const loadPanel = async () => {
     const response = await fetch("/api/admin/panel")
@@ -54,10 +64,19 @@ export default function AdminPage() {
       return
     }
     setPanel({
+      isSuperAdmin: Boolean(result.isSuperAdmin),
       reviewRequired: Boolean(result.reviewRequired),
+      shutdown: result.shutdown ?? {
+        enabled: false,
+        title: "This site is temporarily unavailable",
+        caption: "Please check back later.",
+        showBrand: true,
+      },
       questions: result.questions ?? [],
       askers: result.askers ?? [],
       signatures: result.signatures ?? [],
+      admins: result.admins ?? [],
+      superAdmins: result.superAdmins ?? [],
     })
   }
 
@@ -158,6 +177,93 @@ export default function AdminPage() {
             </label>
           </div>
         </section>
+
+        {panel.isSuperAdmin && (
+          <section className="mt-6 rounded-lg border border-primary/20 bg-card p-5">
+            <h2 className="flex items-center gap-2 font-semibold text-foreground">
+              <Power className="h-4 w-4" />
+              Site shutdown
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              When enabled, regular visitors are redirected to the shutdown page. Admins can still use the site and admin panel.
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <label className="text-sm font-medium text-foreground">
+                Shutdown title
+                <input
+                  value={panel.shutdown.title}
+                  onChange={(event) =>
+                    setPanel({ ...panel, shutdown: { ...panel.shutdown, title: event.target.value } })
+                  }
+                  className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-sm font-medium text-foreground">
+                Caption
+                <input
+                  value={panel.shutdown.caption}
+                  onChange={(event) =>
+                    setPanel({ ...panel, shutdown: { ...panel.shutdown, caption: event.target.value } })
+                  }
+                  className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <input
+                  type="checkbox"
+                  checked={panel.shutdown.showBrand}
+                  onChange={(event) =>
+                    setPanel({ ...panel, shutdown: { ...panel.shutdown, showBrand: event.target.checked } })
+                  }
+                  className="h-4 w-4 rounded border-input text-primary"
+                />
+                Show Vote Daniel Johnson
+              </label>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() =>
+                  adminAction(
+                    {
+                      action: "set-shutdown",
+                      enabled: !panel.shutdown.enabled,
+                      title: panel.shutdown.title,
+                      caption: panel.shutdown.caption,
+                      showBrand: panel.shutdown.showBrand,
+                    },
+                    panel.shutdown.enabled ? "Shutdown turned off." : "Shutdown turned on."
+                  )
+                }
+                className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${
+                  panel.shutdown.enabled ? "bg-destructive" : "bg-primary"
+                }`}
+              >
+                {panel.shutdown.enabled ? "Turn shutdown off" : "Turn shutdown on"}
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() =>
+                  adminAction(
+                    {
+                      action: "set-shutdown",
+                      enabled: panel.shutdown.enabled,
+                      title: panel.shutdown.title,
+                      caption: panel.shutdown.caption,
+                      showBrand: panel.shutdown.showBrand,
+                    },
+                    "Shutdown message saved."
+                  )
+                }
+                className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground disabled:opacity-60"
+              >
+                Save message
+              </button>
+            </div>
+          </section>
+        )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <section className="rounded-lg border border-border bg-card p-5">
@@ -298,6 +404,68 @@ export default function AdminPage() {
             )}
           </div>
         </section>
+
+        {panel.isSuperAdmin && (
+          <section className="mt-6 rounded-lg border border-border bg-card p-5">
+            <h2 className="flex items-center gap-2 font-semibold text-foreground">
+              <UserPlus className="h-4 w-4" />
+              Admins
+            </h2>
+            <div className="mt-4 flex flex-col gap-3 md:flex-row">
+              <input
+                type="email"
+                value={newAdminEmail}
+                onChange={(event) => setNewAdminEmail(event.target.value)}
+                placeholder="admin@email.com"
+                className="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                disabled={saving || !newAdminEmail.trim()}
+                onClick={() =>
+                  adminAction(
+                    { action: "add-admin", email: newAdminEmail },
+                    "Admin added."
+                  ).then(() => setNewAdminEmail(""))
+                }
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              >
+                Add admin
+              </button>
+            </div>
+            <div className="mt-4 grid gap-2 md:grid-cols-2">
+              {panel.admins.map((admin) => {
+                const isSuper = panel.superAdmins.some((item) => item.email === admin.email)
+                return (
+                  <div
+                    key={admin.email}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{admin.email}</p>
+                      {isSuper && <p className="text-xs font-semibold text-primary">Super admin</p>}
+                    </div>
+                    {!isSuper && (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() =>
+                          adminAction(
+                            { action: "delete-admin", email: admin.email },
+                            "Admin removed."
+                          )
+                        }
+                        className="rounded-lg border border-destructive/20 px-3 py-1.5 text-xs font-semibold text-destructive disabled:opacity-60"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )

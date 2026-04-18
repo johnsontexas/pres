@@ -62,7 +62,7 @@ function cleanLinks(value: unknown) {
 }
 
 function isMissingColumnError(error: unknown, column: string) {
-  const message = error instanceof Error ? error.message : String(error ?? "")
+  const message = errorMessage(error, "Database error")
   const code = typeof error === "object" && error && "code" in error
     ? String((error as { code?: unknown }).code ?? "")
     : ""
@@ -70,8 +70,30 @@ function isMissingColumnError(error: unknown, column: string) {
   return code === "42703" || message.toLowerCase().includes(`'${column}' column`) || message.toLowerCase().includes(`column ${column}`)
 }
 
+function errorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message
+  if (typeof error === "object" && error) {
+    const details = error as {
+      message?: unknown
+      details?: unknown
+      hint?: unknown
+      code?: unknown
+    }
+    return [
+      details.message,
+      details.details,
+      details.hint ? `Hint: ${details.hint}` : null,
+      details.code ? `Code: ${details.code}` : null,
+    ]
+      .filter(Boolean)
+      .map(String)
+      .join(" ")
+  }
+  return String(error || fallback)
+}
+
 function publicNewsError(error: unknown, fallback: string) {
-  const message = error instanceof Error ? error.message : fallback
+  const message = errorMessage(error, fallback)
   if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
     return "SUPABASE_SERVICE_ROLE_KEY is not set in Netlify. Add it, then redeploy."
   }
@@ -130,11 +152,19 @@ export async function PATCH(
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if (body.title !== undefined) updates.title = String(body.title).trim()
-    if (body.excerpt !== undefined) updates.excerpt = String(body.excerpt).trim()
+    if (body.excerpt !== undefined) {
+      updates.excerpt = String(body.excerpt).trim()
+      updates.caption = String(body.excerpt).trim()
+    }
     if (body.content !== undefined) updates.content = String(body.content).trim()
     if (body.publishedAt !== undefined) updates.published_at = String(body.publishedAt)
     if (body.isPublished !== undefined) updates.is_published = Boolean(body.isPublished)
-    if (body.imageUrl !== undefined) updates.image_url = body.imageUrl ? String(body.imageUrl).trim() : null
+    if (body.imageUrl !== undefined) {
+      const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : null
+      updates.image_url = imageUrl
+      updates.media_url = imageUrl ?? ""
+      updates.media_type = "image"
+    }
     if (body.slug !== undefined) updates.slug = String(body.slug).trim()
     if (body.links !== undefined) updates.links = cleanLinks(body.links)
 
@@ -148,6 +178,33 @@ export async function PATCH(
 
     if (error && isMissingColumnError(error, "links") && "links" in updates) {
       delete updates.links
+      const retry = await admin
+        .from("news_posts")
+        .update(updates)
+        .eq("id", id)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error && isMissingColumnError(error, "caption") && "caption" in updates) {
+      delete updates.caption
+      const retry = await admin
+        .from("news_posts")
+        .update(updates)
+        .eq("id", id)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error && isMissingColumnError(error, "media_url") && "media_url" in updates) {
+      delete updates.media_url
+      delete updates.media_type
       const retry = await admin
         .from("news_posts")
         .update(updates)
