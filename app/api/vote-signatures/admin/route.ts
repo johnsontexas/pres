@@ -151,6 +151,7 @@ export async function PATCH(request: NextRequest) {
     const body = (await request.json()) as {
       id?: string
       status?: "approved" | "rejected"
+      glowEnabled?: boolean
     }
 
     if (!body.id || (body.status !== "approved" && body.status !== "rejected")) {

@@ -64,6 +64,26 @@ function cleanLinks(value: unknown) {
     .slice(0, 5)
 }
 
+function isMissingColumnError(error: unknown, column: string) {
+  const message = error instanceof Error ? error.message : String(error ?? "")
+  const code = typeof error === "object" && error && "code" in error
+    ? String((error as { code?: unknown }).code ?? "")
+    : ""
+
+  return code === "42703" || message.toLowerCase().includes(`'${column}' column`) || message.toLowerCase().includes(`column ${column}`)
+}
+
+function publicNewsError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Could not create post"
+  if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+    return "SUPABASE_SERVICE_ROLE_KEY is not set in Netlify. Add it, then redeploy."
+  }
+  if (isMissingColumnError(error, "links")) {
+    return "The news links column is missing in Supabase. Run the latest news SQL, then try again."
+  }
+  return message
+}
+
 async function uniqueSlug(admin: ReturnType<typeof createAdminClient>, baseSlug: string) {
   const fallback = baseSlug || `news-${Date.now()}`
   let nextSlug = fallback
@@ -106,22 +126,36 @@ export async function POST(request: NextRequest) {
     }
 
     const slug = await uniqueSlug(admin, String(body.slug ?? "").trim())
-    const { data, error } = await admin
+    const postPayload: Record<string, unknown> = {
+      title,
+      excerpt: String(body.excerpt ?? "").trim(),
+      content,
+      author: String(body.author ?? auth.user.user_metadata?.name ?? "Admin"),
+      author_id: auth.user.id,
+      published_at: String(body.publishedAt ?? new Date().toISOString()),
+      is_published: Boolean(body.isPublished),
+      image_url: body.imageUrl ? String(body.imageUrl).trim() : null,
+      slug,
+      links: cleanLinks(body.links),
+    }
+
+    let { data, error } = await admin
       .from("news_posts")
-      .insert({
-        title,
-        excerpt: String(body.excerpt ?? "").trim(),
-        content,
-        author: String(body.author ?? auth.user.user_metadata?.name ?? "Admin"),
-        author_id: auth.user.id,
-        published_at: String(body.publishedAt ?? new Date().toISOString()),
-        is_published: Boolean(body.isPublished),
-        image_url: body.imageUrl ? String(body.imageUrl).trim() : null,
-        slug,
-        links: cleanLinks(body.links),
-      })
+      .insert(postPayload)
       .select("*")
       .single()
+
+    if (error && isMissingColumnError(error, "links")) {
+      delete postPayload.links
+      const retry = await admin
+        .from("news_posts")
+        .insert(postPayload)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
 
     if (error) throw error
 
@@ -129,7 +163,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("news create error:", err)
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Could not create post" },
+      { ok: false, error: publicNewsError(err) },
       { status: 500 }
     )
   }

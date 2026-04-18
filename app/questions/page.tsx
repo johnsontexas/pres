@@ -15,6 +15,7 @@ export default function QuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [sort, setSort] = useState<SortMode>("top")
   const [isLoading, setIsLoading] = useState(true)
+  const [submittedPending, setSubmittedPending] = useState(false)
 
   const refreshQuestions = useCallback(async () => {
     setIsLoading(true)
@@ -33,6 +34,10 @@ export default function QuestionsPage() {
     void refreshQuestions()
   }, [refreshQuestions])
 
+  useEffect(() => {
+    setSubmittedPending(new URLSearchParams(window.location.search).get("submitted") === "pending")
+  }, [])
+
   const handleUpvote = async (id: string) => {
     if (!user) return
     await toggleUpvote(id, user.id)
@@ -45,20 +50,31 @@ export default function QuestionsPage() {
     void refreshQuestions()
   }
 
-  const unanswered = questions.filter((q) => !q.answer).length
+  const unanswered = questions.filter((q) => q.status === "approved" && !q.answer).length
+  const pending = questions.filter((q) => q.status === "pending").length
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-6 pt-6">
         <div className="mb-6 flex justify-end">
           {user ? (
-            <Link
-              href="/questions/ask"
-              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <MessageSquarePlus className="h-4 w-4" />
-              Ask a Question
-            </Link>
+            <div className="flex flex-wrap justify-end gap-2">
+              {user.isAdmin && (
+                <Link
+                  href="/admin"
+                  className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                >
+                  Admin Panel
+                </Link>
+              )}
+              <Link
+                href="/questions/ask"
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                Ask a Question
+              </Link>
+            </div>
           ) : (
             <Link
               href="/signin?redirect=/questions/ask"
@@ -83,6 +99,16 @@ export default function QuestionsPage() {
           {user?.isAdmin && unanswered > 0 && (
             <p className="mt-2 text-sm font-medium text-accent">
               {unanswered} unanswered {unanswered === 1 ? "question" : "questions"}
+            </p>
+          )}
+          {user?.isAdmin && pending > 0 && (
+            <p className="mt-2 text-sm font-medium text-primary">
+              {pending} pending {pending === 1 ? "question" : "questions"} waiting for review
+            </p>
+          )}
+          {submittedPending && (
+            <p className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary">
+              Your question was submitted and is waiting for admin review.
             </p>
           )}
         </div>

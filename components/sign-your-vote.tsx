@@ -23,7 +23,7 @@ import type { VoteSignature } from "@/lib/vote-signatures"
 import { CAMPAIGN_SLOGAN } from "@/lib/campaign"
 import { getSignatureZones, normalizeSignaturePlacement } from "@/lib/signature-layout"
 
-const SIGNATURE_COLORS = ["#111827", "#FFFFFF", "#1B5E20", "#B91C1C", "#FACC15"]
+const SIGNATURE_COLORS = ["#FFFFFF", "#1B5E20", "#B91C1C", "#FACC15"]
 const DEFAULT_PLACEMENT = {
   x: 0.18,
   y: 0.82,
@@ -33,13 +33,18 @@ const DEFAULT_PLACEMENT = {
   glowEnabled: false,
 }
 
+function validSignatureColor(color: string) {
+  return SIGNATURE_COLORS.includes(color) ? color : "#FFFFFF"
+}
+
 function signatureStyle(signature: VoteSignature, canDrag: boolean): CSSProperties {
+  const color = validSignatureColor(signature.color)
   return {
     left: `${signature.x * 100}%`,
     top: `${signature.y * 100}%`,
     width: `${signature.width * 100}%`,
     aspectRatio: "3 / 1",
-    backgroundColor: signature.color,
+    backgroundColor: color,
     maskImage: `url(${signature.imageUrl})`,
     WebkitMaskImage: `url(${signature.imageUrl})`,
     maskRepeat: "no-repeat",
@@ -50,7 +55,9 @@ function signatureStyle(signature: VoteSignature, canDrag: boolean): CSSProperti
     WebkitMaskPosition: "center",
     opacity: signature.status === "approved" ? 0.92 : 0.55,
     transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
-    filter: signature.glowEnabled ? `drop-shadow(0 0 10px ${signature.color}) drop-shadow(0 0 18px ${signature.color})` : undefined,
+    filter: signature.glowEnabled
+      ? `drop-shadow(0 0 8px ${color}) drop-shadow(0 0 18px ${color}) drop-shadow(0 0 30px ${color})`
+      : undefined,
     cursor: canDrag ? "grab" : "default",
   }
 }
@@ -129,12 +136,12 @@ export function SignYourVote() {
         y: currentUserSignature.y,
         width: currentUserSignature.width,
         rotation: currentUserSignature.rotation,
-        color: currentUserSignature.color,
+        color: validSignatureColor(currentUserSignature.color),
         glowEnabled: currentUserSignature.glowEnabled,
       })
       placementRef.current = nextPlacement
       setDraftPlacement(nextPlacement)
-      setSelectedColor(currentUserSignature.color)
+      setSelectedColor(validSignatureColor(currentUserSignature.color))
     }
     setIsRefreshing(false)
   }, [normalizePlacement, user])
@@ -468,6 +475,71 @@ export function SignYourVote() {
             exactly where you want it.
           </p>
         </div>
+
+        {!isPlacementOpen && (
+          <div className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-lg border border-primary/25 bg-primary shadow-sm">
+            <div
+              className="relative aspect-[390/760] w-full overflow-hidden md:aspect-[1000/560]"
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 60% at 20% 20%, oklch(0.55 0.12 145 / 0.35), transparent 55%), oklch(0.32 0.12 145)",
+              }}
+              aria-label="Current signature preview"
+            >
+              <div className="pointer-events-none absolute inset-0 z-0">
+                {displayedSignatures.map((signature) => (
+                  <div
+                    key={signature.id}
+                    className="absolute"
+                    style={signatureStyle(signature, false)}
+                    title={
+                      signature.status === "pending"
+                        ? `${signature.authorName} - pending approval`
+                        : signature.authorName
+                    }
+                  />
+                ))}
+              </div>
+              <div className="absolute left-[18%] top-[8%] z-10 max-w-[64%] rounded-lg border border-primary-foreground/25 bg-primary-foreground/5 px-3 py-1.5 text-center text-[10px] font-medium tracking-wide text-primary-foreground/90 md:left-[6%] md:top-[15%] md:max-w-[39%] md:px-4 md:py-2 md:text-left md:text-xs">
+                Running for <span className="text-accent">House Council President</span>
+              </div>
+              <div className="absolute left-[10%] top-[18%] z-10 max-w-[80%] text-center md:left-[6%] md:top-[30%] md:max-w-[50%] md:text-left">
+                <div className="font-display text-4xl font-bold leading-[1.08] tracking-tight text-primary-foreground md:text-5xl">
+                  Vote <span className="text-accent">Daniel Johnson</span>
+                </div>
+                <p className="mx-auto mt-3 max-w-[92%] font-serif text-sm font-semibold leading-relaxed text-primary-foreground/95 md:mx-0 md:mt-4 md:text-lg">
+                  {CAMPAIGN_SLOGAN}
+                </p>
+              </div>
+              <div className="absolute left-[12%] top-[39%] z-10 flex max-w-[76%] flex-wrap justify-center gap-2 md:left-[6%] md:top-[62%] md:max-w-[56%] md:justify-start md:gap-3">
+                <div className="rounded-lg bg-primary-foreground px-3 py-2 text-[10px] font-semibold text-primary shadow-sm md:px-5 md:py-2.5 md:text-xs">
+                  See my platform
+                </div>
+                <div className="rounded-lg border border-primary-foreground/35 bg-primary-foreground/5 px-3 py-2 text-[10px] font-semibold text-primary-foreground md:px-5 md:py-2.5 md:text-xs">
+                  Ask me a question
+                </div>
+                <div className="rounded-lg border border-accent/50 bg-accent/15 px-3 py-2 text-[10px] font-semibold text-primary-foreground md:px-5 md:py-2.5 md:text-xs">
+                  Join the campaign
+                </div>
+              </div>
+              <div className="absolute bottom-[9%] left-[28%] z-10 w-[48%] md:left-auto md:right-[7%] md:w-[25%]">
+                <Image
+                  src="/images/candidate.png"
+                  alt="Daniel Johnson"
+                  width={360}
+                  height={450}
+                  className="h-auto w-full object-contain"
+                  priority={false}
+                />
+              </div>
+              {isRefreshing && (
+                <div className="absolute inset-0 z-20 grid place-items-center bg-background/50 text-sm text-muted-foreground">
+                  Loading signatures...
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-start justify-between gap-4 rounded-lg border border-border bg-background p-5 md:flex-row md:items-center">
           <div>
@@ -934,7 +1006,7 @@ export function SignYourVote() {
 
             <canvas
               ref={canvasRef}
-              className="mt-4 h-56 w-full touch-none rounded-lg border border-input bg-white"
+              className="mt-4 h-56 w-full touch-none rounded-lg border border-input bg-primary/10"
               onPointerDown={startDrawing}
               onPointerMove={draw}
               onPointerUp={stopDrawing}

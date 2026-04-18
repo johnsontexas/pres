@@ -61,6 +61,11 @@ export function QuestionCard({
               Answered
             </span>
           )}
+          {user?.isAdmin && question.status !== "approved" && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase">
+              {question.status}
+            </span>
+          )}
         </div>
 
         {question.answer && (

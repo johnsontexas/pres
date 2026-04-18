@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/client"
-
 export type Question = {
   id: string
   author: string
@@ -9,6 +7,7 @@ export type Question = {
   upvotes: string[] // user IDs
   answer: string | null
   isAnonymous: boolean
+  status: "approved" | "pending" | "rejected"
 }
 
 function mapFromDb(row: {
@@ -20,6 +19,7 @@ function mapFromDb(row: {
   upvotes: string[] | null
   answer: string | null
   is_anonymous?: boolean | null
+  status?: "approved" | "pending" | "rejected" | null
 }): Question {
   return {
     id: row.id,
@@ -30,22 +30,24 @@ function mapFromDb(row: {
     upvotes: row.upvotes ?? [],
     answer: row.answer,
     isAnonymous: row.is_anonymous ?? false,
+    status: row.status ?? "approved",
   }
 }
 
 export async function getQuestions(): Promise<Question[]> {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("questions")
-    .select("*")
-    .order("created_at", { ascending: false })
+  const response = await fetch("/api/questions")
+  const result = (await response.json()) as {
+    ok: boolean
+    questions?: Parameters<typeof mapFromDb>[0][]
+    error?: string
+  }
 
-  if (error || !data) {
-    console.error("Error fetching questions", error)
+  if (!response.ok || !result.ok || !result.questions) {
+    console.error("Error fetching questions", result.error)
     return []
   }
 
-  return data.map(mapFromDb)
+  return result.questions.map(mapFromDb)
 }
 
 export async function addQuestion(
@@ -54,86 +56,81 @@ export async function addQuestion(
   authorId: string,
   isAnonymous: boolean
 ): Promise<Question | null> {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("questions")
-    .insert({
-      author,
-      author_id: authorId,
-      text,
-      is_anonymous: isAnonymous,
-    })
-    .select("*")
-    .single()
-
-  if (error || !data) {
-    console.error("Error adding question", error)
-    return null
+  const response = await fetch("/api/questions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, author, authorId, isAnonymous }),
+  })
+  const result = (await response.json()) as {
+    ok: boolean
+    question?: Parameters<typeof mapFromDb>[0]
+    error?: string
   }
 
-  return mapFromDb(data)
+  if (!response.ok || !result.ok || !result.question) {
+    console.error("Error adding question", result.error)
+    throw new Error(result.error ?? "Could not submit question")
+  }
+
+  return mapFromDb(result.question)
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase.from("questions").delete().eq("id", id)
-  if (error) {
-    console.error("Error deleting question", error)
+  const response = await fetch(`/api/questions/${id}`, { method: "DELETE" })
+  if (!response.ok) {
+    console.error("Error deleting question", await response.text())
   }
 }
 
 export async function toggleUpvote(questionId: string, userId: string): Promise<void> {
-  const supabase = createClient()
-
-  const { data: row, error } = await supabase
-    .from("questions")
-    .select("id, upvotes")
-    .eq("id", questionId)
-    .single()
-
-  if (error || !row) {
-    console.error("Error loading question for upvote", error)
-    return
-  }
-
-  const current = (row.upvotes as string[] | null) ?? []
-  const hasUpvoted = current.includes(userId)
-  const next = hasUpvoted ? current.filter((id) => id !== userId) : [...current, userId]
-
-  const { error: updateError } = await supabase
-    .from("questions")
-    .update({ upvotes: next })
-    .eq("id", questionId)
-
-  if (updateError) {
-    console.error("Error updating upvotes", updateError)
+  void userId
+  const response = await fetch(`/api/questions/${questionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "toggle-upvote" }),
+  })
+  if (!response.ok) {
+    console.error("Error updating upvotes", await response.text())
   }
 }
 
 export async function answerQuestion(questionId: string, answer: string): Promise<void> {
-  const supabase = createClient()
-  const { error } = await supabase
-    .from("questions")
-    .update({ answer })
-    .eq("id", questionId)
-
-  if (error) {
-    console.error("Error saving answer", error)
+  const response = await fetch(`/api/questions/${questionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "answer", answer }),
+  })
+  if (!response.ok) {
+    console.error("Error saving answer", await response.text())
   }
 }
 
 export async function getQuestion(id: string): Promise<Question | null> {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from("questions")
-    .select("*")
-    .eq("id", id)
-    .single()
+  const response = await fetch(`/api/questions/${id}`)
+  const result = (await response.json()) as {
+    ok: boolean
+    question?: Parameters<typeof mapFromDb>[0]
+    error?: string
+  }
 
-  if (error || !data) {
-    console.error("Error fetching question", error)
+  if (!response.ok || !result.ok || !result.question) {
+    console.error("Error fetching question", result.error)
     return null
   }
 
-  return mapFromDb(data)
+  return mapFromDb(result.question)
+}
+
+export async function moderateQuestion(
+  questionId: string,
+  status: "approved" | "pending" | "rejected"
+): Promise<void> {
+  const response = await fetch(`/api/questions/${questionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "moderate", status }),
+  })
+  if (!response.ok) {
+    console.error("Error moderating question", await response.text())
+  }
 }

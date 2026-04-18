@@ -61,6 +61,29 @@ function cleanLinks(value: unknown) {
     .slice(0, 5)
 }
 
+function isMissingColumnError(error: unknown, column: string) {
+  const message = error instanceof Error ? error.message : String(error ?? "")
+  const code = typeof error === "object" && error && "code" in error
+    ? String((error as { code?: unknown }).code ?? "")
+    : ""
+
+  return code === "42703" || message.toLowerCase().includes(`'${column}' column`) || message.toLowerCase().includes(`column ${column}`)
+}
+
+function publicNewsError(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : fallback
+  if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+    return "SUPABASE_SERVICE_ROLE_KEY is not set in Netlify. Add it, then redeploy."
+  }
+  if (isMissingColumnError(error, "links")) {
+    return "The news links column is missing in Supabase. Run the latest news SQL, then try again."
+  }
+  if (isMissingColumnError(error, "likes")) {
+    return "The news likes column is missing in Supabase. Run the latest news SQL, then try again."
+  }
+  return message
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -116,19 +139,32 @@ export async function PATCH(
     if (body.links !== undefined) updates.links = cleanLinks(body.links)
 
     const admin = createAdminClient()
-    const { data, error } = await admin
+    let { data, error } = await admin
       .from("news_posts")
       .update(updates)
       .eq("id", id)
       .select("*")
       .single()
 
+    if (error && isMissingColumnError(error, "links") && "links" in updates) {
+      delete updates.links
+      const retry = await admin
+        .from("news_posts")
+        .update(updates)
+        .eq("id", id)
+        .select("*")
+        .single()
+
+      data = retry.data
+      error = retry.error
+    }
+
     if (error) throw error
     return NextResponse.json({ ok: true, post: data })
   } catch (err) {
     console.error("news update error:", err)
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Could not update post" },
+      { ok: false, error: publicNewsError(err, "Could not update post") },
       { status: 500 }
     )
   }
@@ -153,7 +189,7 @@ export async function DELETE(
   } catch (err) {
     console.error("news delete error:", err)
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "Could not delete post" },
+      { ok: false, error: publicNewsError(err, "Could not delete post") },
       { status: 500 }
     )
   }

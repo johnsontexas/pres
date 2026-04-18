@@ -1,4 +1,5 @@
 import { Hero } from "@/components/hero"
+import { NewsRotator } from "@/components/news-rotator"
 import { Countdown } from "@/components/countdown"
 import { SignYourVote } from "@/components/sign-your-vote"
 import { Platform } from "@/components/platform"
@@ -11,6 +12,7 @@ export default function CampaignPage() {
   return (
     <main>
       <Hero />
+      <NewsRotator />
       <Countdown />
       <Platform />
       <SignYourVote />

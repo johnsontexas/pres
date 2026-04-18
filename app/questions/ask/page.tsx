@@ -6,7 +6,6 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 import { addQuestion } from "@/lib/questions"
-import { createClient } from "@/lib/supabase/client"
 
 const MAX_QUESTION_LENGTH = 300
 
@@ -46,36 +45,12 @@ export default function AskPage() {
       return
     }
 
-    const supabase = createClient()
-    // Block banned users from asking (admins can always ask)
-    if (!user.isAdmin) {
-      const { data: bannedRow } = await supabase
-        .from("banned_askers")
-        .select("user_id")
-        .eq("user_id", user.id)
-        .maybeSingle()
-
-      if (bannedRow) {
-        setError("You are not allowed to ask new questions at this time.")
-        return
-      }
+    try {
+      const question = await addQuestion(trimmed, user.name, user.id, isAnonymous)
+      router.push(question?.status === "pending" ? "/questions?submitted=pending" : "/questions")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not submit question.")
     }
-
-    // Simple rate limit: max 5 questions per user per hour
-    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const { count, error: countError } = await supabase
-      .from("questions")
-      .select("id", { count: "exact", head: true })
-      .eq("author_id", user.id)
-      .gte("created_at", cutoff)
-
-    if (!countError && (count ?? 0) >= 5) {
-      setError("You can ask up to 5 questions per hour. Please wait a bit before asking another.")
-      return
-    }
-
-    await addQuestion(trimmed, user.name, user.id, isAnonymous)
-    router.push("/questions")
   }
 
   return (

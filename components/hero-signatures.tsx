@@ -8,13 +8,18 @@ import { getSignatureZones, normalizeSignaturePlacement } from "@/lib/signature-
 import { getAllSignaturesForAdmin, getApprovedSignatures } from "@/lib/vote-signatures"
 import type { VoteSignature } from "@/lib/vote-signatures"
 
+function displaySignatureColor(color: string) {
+  return color === "#111827" ? "#FFFFFF" : color
+}
+
 function signatureStyle(signature: VoteSignature): CSSProperties {
+  const color = displaySignatureColor(signature.color)
   return {
     left: `${signature.x * 100}%`,
     top: `${signature.y * 100}%`,
     width: `${signature.width * 100}%`,
     aspectRatio: "3 / 1",
-    backgroundColor: signature.color,
+    backgroundColor: color,
     maskImage: `url(${signature.imageUrl})`,
     WebkitMaskImage: `url(${signature.imageUrl})`,
     maskRepeat: "no-repeat",
@@ -25,7 +30,9 @@ function signatureStyle(signature: VoteSignature): CSSProperties {
     WebkitMaskPosition: "center",
     opacity: signature.status === "approved" ? 0.82 : 0.42,
     transform: `translate(-50%, -50%) rotate(${signature.rotation}deg)`,
-    filter: signature.glowEnabled ? `drop-shadow(0 0 10px ${signature.color}) drop-shadow(0 0 18px ${signature.color})` : undefined,
+    filter: signature.glowEnabled
+      ? `drop-shadow(0 0 8px ${color}) drop-shadow(0 0 18px ${color}) drop-shadow(0 0 30px ${color})`
+      : undefined,
   }
 }
 

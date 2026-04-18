@@ -5,8 +5,7 @@ import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
 import { ArrowLeft, ChevronUp, Trash2, CheckCircle2, Send, UserX } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
-import { getQuestion, toggleUpvote, answerQuestion, deleteQuestion } from "@/lib/questions"
-import { createClient } from "@/lib/supabase/client"
+import { getQuestion, toggleUpvote, answerQuestion, deleteQuestion, moderateQuestion } from "@/lib/questions"
 import type { Question } from "@/lib/questions"
 
 export default function QuestionDetailPage() {
@@ -32,13 +31,13 @@ export default function QuestionDetailPage() {
       setQuestion(q)
       if (q.answer) setAnswerText(q.answer)
       if (user?.isAdmin) {
-        const supabase = createClient()
-        const { data: bannedRow } = await supabase
-          .from("banned_askers")
-          .select("user_id")
-          .eq("user_id", q.authorId)
-          .maybeSingle()
-        setIsBanned(Boolean(bannedRow))
+        const response = await fetch("/api/admin/panel")
+        const result = (await response.json()) as {
+          ok: boolean
+          askers?: { userId: string; isBanned: boolean }[]
+        }
+        const asker = result.askers?.find((item) => item.userId === q.authorId)
+        setIsBanned(Boolean(asker?.isBanned))
       }
       setIsLoading(false)
     }
@@ -79,22 +78,16 @@ export default function QuestionDetailPage() {
 
   const handleToggleBan = async () => {
     if (!user?.isAdmin || !question) return
-    const supabase = createClient()
-    if (isBanned) {
-      const { error } = await supabase
-        .from("banned_askers")
-        .delete()
-        .eq("user_id", question.authorId)
-      if (!error) setIsBanned(false)
-    } else {
-      const { error } = await supabase
-        .from("banned_askers")
-        .insert({ user_id: question.authorId })
-      // Success, or duplicate key (already banned), both mean user is banned
-      if (!error || error.code === "23505") {
-        setIsBanned(true)
-      }
-    }
+    const response = await fetch("/api/admin/panel", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "set-ban",
+        userId: question.authorId,
+        enabled: !isBanned,
+      }),
+    })
+    if (response.ok) setIsBanned(!isBanned)
   }
 
   const handleAnswer = async () => {
@@ -108,6 +101,13 @@ export default function QuestionDetailPage() {
   const createdDate = question ? new Date(question.createdAt) : null
   const displayAuthor =
     question && question.isAnonymous && !user?.isAdmin ? "Anonymous" : question?.author
+
+  const handleQuestionStatus = async (status: "approved" | "rejected" | "pending") => {
+    if (!user?.isAdmin || !question) return
+    await moderateQuestion(question.id, status)
+    const updated = await getQuestion(question.id)
+    setQuestion(updated)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,6 +134,24 @@ export default function QuestionDetailPage() {
                 <UserX className="h-4 w-4" />
                 {isBanned ? "Unban from asking" : "Ban from asking"}
               </button>
+              {question.status !== "approved" && (
+                <button
+                  type="button"
+                  onClick={() => handleQuestionStatus("approved")}
+                  className="rounded-lg border border-primary/30 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                >
+                  Approve
+                </button>
+              )}
+              {question.status !== "rejected" && (
+                <button
+                  type="button"
+                  onClick={() => handleQuestionStatus("rejected")}
+                  className="rounded-lg border border-destructive/20 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+                >
+                  Reject
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleDelete}
@@ -189,6 +207,11 @@ export default function QuestionDetailPage() {
                       year: "numeric",
                     })}
                   </span>
+                  {user?.isAdmin && question.status !== "approved" && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold uppercase">
+                      {question.status}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

@@ -41,6 +41,14 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
+          {user?.isAdmin && (
+            <Link
+              href="/admin"
+              className="text-sm font-medium text-primary-foreground/80 transition-colors hover:text-primary-foreground"
+            >
+              Admin
+            </Link>
+          )}
 
           {user ? (
             <div className="flex items-center gap-3 border-l border-primary-foreground/20 pl-6">
@@ -97,6 +105,15 @@ export function SiteHeader() {
                 {link.label}
               </Link>
             ))}
+            {user?.isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileOpen(false)}
+                className="text-sm font-medium text-primary-foreground/85 transition-colors hover:text-primary-foreground"
+              >
+                Admin
+              </Link>
+            )}
 
             <div className="border-t border-primary-foreground/10 pt-4">
               {user ? (

@@ -6,7 +6,7 @@ const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
   .split(",")
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean)
-const ALLOWED_SIGNATURE_COLORS = new Set(["#111827", "#FFFFFF", "#1B5E20", "#B91C1C", "#FACC15"])
+const ALLOWED_SIGNATURE_COLORS = new Set(["#FFFFFF", "#1B5E20", "#B91C1C", "#FACC15"])
 
 async function getSignedInUser() {
   const supabase = await createClient()
@@ -158,7 +158,7 @@ export async function PATCH(request: NextRequest) {
     const userIsAdmin = await isAdminEmail(auth.email)
     const { data: existing, error: existingError } = await admin
       .from("vote_signatures")
-      .select("id, user_id")
+      .select("id, user_id, author_email, glow_enabled, glow_granted_by_admin")
       .eq("id", body.id)
       .maybeSingle()
 
@@ -170,7 +170,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Not allowed" }, { status: 403 })
     }
 
-    const glowAllowed = await getGlowCreditCount(admin, auth.email) >= 5
+    const isOwner = existing.user_id === auth.user.id
+    const ownerEmail = String(existing.author_email ?? auth.email).toLowerCase()
+    const requestedGlow = userIsAdmin && !isOwner
+      ? Boolean(existing.glow_enabled)
+      : Boolean(body.placement.glowEnabled)
+    const glowAllowed = Boolean(existing.glow_granted_by_admin) || await getGlowCreditCount(admin, ownerEmail) >= 5
     const { data, error } = await admin
       .from("vote_signatures")
       .update({
@@ -179,7 +184,7 @@ export async function PATCH(request: NextRequest) {
         width: body.placement.width,
         rotation: body.placement.rotation,
         color: body.placement.color,
-        glow_enabled: Boolean(body.placement.glowEnabled && glowAllowed),
+        glow_enabled: Boolean(requestedGlow && glowAllowed),
       })
       .eq("id", body.id)
       .select("*")
